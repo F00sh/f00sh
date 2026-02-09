@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+@layer utilities {
+    .font-archivo-black {
+        font-family: "Archivo Black", sans-serif;
+    }
+
+    .font-dm-mono {
+        font-family: "DM Mono", monospace;
+    }
+
+    .font-atkinson-hyperlegible {
+        font-family: "Atkinson Hyperlegible", sans-serif;
+    }
+}

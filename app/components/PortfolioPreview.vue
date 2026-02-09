@@ -1,20 +1,20 @@
 <template>
-  <section class="min-h-screen bg-black flex items-center">
+  <section class="min-h-screen bg-yellow-600 flex items-center">
     <div class="mx-auto w-full max-w-6xl px-6 sm:px-10 lg:px-16 py-14">
       <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-8">
         <div>
-          <p class="text-purple-300 tracking-widest uppercase text-xs sm:text-sm">Portfolio</p>
+          <p class="text-white tracking-widest uppercase text-xs sm:text-sm">Portfolio</p>
           <h2 class="text-3xl sm:text-4xl font-black uppercase text-white mt-2">
             A few highlights
           </h2>
-          <p class="text-white/70 mt-3 max-w-xl">
+          <p class="text-white mt-3 max-w-xl font-dm-mono">
             Selected work across web, game, animation and visual design.
           </p>
         </div>
 
         <NuxtLink
           to="/portfolio"
-          class="inline-flex items-center justify-center rounded-full bg-black/50 text-white border border-white/20 px-5 py-2 hover:bg-black/70 w-fit"
+          class="inline-flex items-center justify-center bg-blue-600 text-white drop-shadow-md px-5 py-2 hover:bg-black/70 w-fit"
         >
           View all
         </NuxtLink>

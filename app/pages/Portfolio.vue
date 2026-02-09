@@ -1,5 +1,5 @@
 <template>
-  <main class="min-h-screen bg-black">
+  <main class="min-h-screen bg-purple-600">
     <div class="mx-auto w-full max-w-6xl px-6 sm:px-10 lg:px-16 pt-8">
       <NuxtLink
         to="/"
