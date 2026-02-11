@@ -1,7 +1,7 @@
 ﻿<template>
   <section class="about-section relative min-h-screen min-w-full flex items-center">
     <!-- Black background (scoped to About only) -->
-    <div class="absolute inset-0 md:bg-black"></div>
+    <div class="absolute inset-0 md:bg-yellow-600"></div>
 
     <div class="relative z-10 w-full px-6 sm:px-10 lg:px-16 py-20">
       <div class="mx-auto max-w-4xl grid grid-cols-1 gap-10 items-stretch">

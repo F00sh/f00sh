@@ -1,21 +1,10 @@
 <template>
-  <div class="video-bg">
-    <div class="video-bg__media" aria-hidden="true">
-      <ClientOnly>
-        <iframe
-          class="video-bg__iframe"
-          :src="embedUrl"
-          title="Background video"
-          frameborder="0"
-          allow="autoplay; fullscreen; picture-in-picture"
-          allowfullscreen
-        />
-      </ClientOnly>
-    </div>
+  <div ref="rootEl" class="video-bg bg-yellow-600">
+    <canvas ref="canvasEl" class="parallax-layer" aria-hidden="true" />
     <div class="video-bg__overlay" :class="overlayClass" />
     <div class="video-bg__content">
       <div v-if="showToolkit" class="video-bg__toolkit">
-        <div class="toolkit-panel">
+        <div class="toolkit-panel rounded-4xl">
           <h2 class="text-lg sm:text-xl font-bold text-white mb-4">
             Toolkit
           </h2>
@@ -52,13 +41,9 @@
 </template>
 
 <script setup>
-import { computed } from "vue"
+import { onBeforeUnmount, onMounted, ref } from "vue"
 
 const props = defineProps({
-  videoId: {
-    type: String,
-    default: "UKPcEo7-ZMU"
-  },
   overlayClass: {
     type: String,
     default: "bg-black/40"
@@ -69,41 +54,190 @@ const props = defineProps({
   }
 })
 
-const embedUrl = computed(() => {
-  const id = encodeURIComponent(props.videoId)
-  return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&disablekb=1`
+const rootEl = ref(null)
+const canvasEl = ref(null)
+const currentFrame = ref(1)
+const displayFrame = ref(1)
+let ticking = false
+const totalFrames = 250
+const framePadding = 4
+const imageCache = Array.from({ length: totalFrames + 1 })
+let requestedFrame = 1
+let ctx = null
+
+const clamp = (value, min, max) => Math.max(min, Math.min(value, max))
+
+const updateFrame = () => {
+  ticking = false
+  const el = rootEl.value
+  if (!el) return
+
+  const rect = el.getBoundingClientRect()
+  const viewportHeight = window.innerHeight || 1
+  const midPoint = rect.top + rect.height / 2
+  const start = viewportHeight + rect.height / 2
+  const end = -rect.height / 2
+  const progressRaw = (start - midPoint) / (start - end)
+  const progress = clamp(progressRaw, 0, 1)
+  const frame = Math.round(1 + progress * (totalFrames - 1))
+  currentFrame.value = clamp(frame, 1, totalFrames)
+  requestedFrame = currentFrame.value
+  ensureFrame(requestedFrame)
+}
+
+const handleScroll = () => {
+  if (ticking) return
+  ticking = true
+  window.requestAnimationFrame(updateFrame)
+}
+
+const handleResize = () => {
+  resizeCanvas()
+  handleScroll()
+}
+
+onMounted(() => {
+  initCanvas()
+  ensureFrame(1)
+  updateFrame()
+  window.addEventListener("scroll", handleScroll, { passive: true })
+  window.addEventListener("resize", handleResize, { passive: true })
+  preloadFrames()
 })
+
+onBeforeUnmount(() => {
+  window.removeEventListener("scroll", handleScroll)
+  window.removeEventListener("resize", handleResize)
+})
+
+const framePath = (frame) =>
+  `/img/heart/${String(frame).padStart(framePadding, "0")}.png`
+
+const ensureFrame = (frame) => {
+  const cached = imageCache[frame]
+  if (cached) {
+    displayFrame.value = frame
+    drawFrame(frame)
+    return
+  }
+
+  const img = new Image()
+  img.src = framePath(frame)
+  const commit = () => {
+    imageCache[frame] = img
+    if (requestedFrame === frame) {
+      displayFrame.value = frame
+      drawFrame(frame)
+    }
+  }
+
+  img.onload = () => {
+    if (img.decode) {
+      img.decode().then(commit).catch(commit)
+    } else {
+      commit()
+    }
+  }
+  img.onerror = commit
+}
+
+const preloadFrames = () => {
+  let nextFrame = 1
+  const batchSize = 10
+  const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 40))
+
+  const loadBatch = () => {
+    const endFrame = Math.min(nextFrame + batchSize - 1, totalFrames)
+    for (let i = nextFrame; i <= endFrame; i += 1) {
+      if (imageCache[i]) continue
+      const img = new Image()
+      img.src = framePath(i)
+      img.onload = () => {
+        if (img.decode) {
+          img.decode().then(() => {
+            imageCache[i] = img
+          }).catch(() => {
+            imageCache[i] = img
+          })
+        } else {
+          imageCache[i] = img
+        }
+      }
+      img.onerror = () => {
+        imageCache[i] = img
+      }
+    }
+    nextFrame = endFrame + 1
+    if (nextFrame <= totalFrames) {
+      idle(loadBatch)
+    }
+  }
+
+  idle(loadBatch)
+}
+
+const initCanvas = () => {
+  const canvas = canvasEl.value
+  if (!canvas) return
+  ctx = canvas.getContext("2d")
+  resizeCanvas()
+  drawFrame(displayFrame.value)
+}
+
+const resizeCanvas = () => {
+  const canvas = canvasEl.value
+  if (!canvas || !ctx) return
+  const width = canvas.clientWidth
+  const height = canvas.clientHeight
+  if (!width || !height) return
+  const dpr = window.devicePixelRatio || 1
+  canvas.width = Math.round(width * dpr)
+  canvas.height = Math.round(height * dpr)
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  drawFrame(displayFrame.value)
+}
+
+const drawFrame = (frame) => {
+  if (!ctx) return
+  const img = imageCache[frame]
+  if (!img || !img.naturalWidth || !img.naturalHeight) return
+
+  const canvas = canvasEl.value
+  if (!canvas) return
+  const width = canvas.clientWidth
+  const height = canvas.clientHeight
+  if (!width || !height) return
+
+  const scale = Math.max(width / img.naturalWidth, height / img.naturalHeight)
+  const drawWidth = img.naturalWidth * scale
+  const drawHeight = img.naturalHeight * scale
+  const dx = (width - drawWidth) / 2
+  const dy = (height - drawHeight) / 2
+
+  ctx.clearRect(0, 0, width, height)
+  ctx.drawImage(img, dx, dy, drawWidth, drawHeight)
+}
+
 </script>
 
 <style scoped>
 .video-bg {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: 100vh;
   overflow: hidden;
-  background: #000;
+  
 }
-.video-bg__media {
+.parallax-layer {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-}
-.video-bg__iframe {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 140vw;
-  height: 78.75vw;
-  min-width: 100%;
-  min-height: 100%;
-  transform: translate(-50%, -50%);
-}
-@media (max-aspect-ratio: 16/9) {
-  .video-bg__iframe {
-    width: 177.78vh;
-    height: 100vh;
-  }
+  width: 100%;
+  height: 100%;
+  display: block;
+  will-change: contents;
+  filter: saturate(1.02);
 }
 .video-bg__overlay {
   position: absolute;
@@ -114,7 +248,7 @@ const embedUrl = computed(() => {
   position: relative;
   z-index: 2;
   width: 100%;
-  height: 100%;
+  height: 100vh;
 }
 .video-bg__toolkit {
   position: absolute;
@@ -126,16 +260,17 @@ const embedUrl = computed(() => {
 }
 .toolkit-panel {
   width: min(46rem, 100%);
-  background: rgba(234, 179, 8, 0.92);
+  background: rgba(234, 179, 8, 0);
   padding: 1.5rem;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(2px);
+
 }
 .tool {
   padding: 0.6rem 0.75rem;
   border-radius: 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(193, 9, 255, 0.7);
   color: rgba(255, 255, 255, 0.9);
   font-weight: 600;
   text-align: center;
