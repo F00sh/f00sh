@@ -1,286 +1,260 @@
 <template>
-  <section class="w-full">
-    <div class="mx-auto w-full max-w-6xl px-6 sm:px-10 lg:px-16 py-10">
-      <div class="flex items-end justify-between gap-6 mb-8">
-        <div>
-          <p class="text-purple-300 tracking-widest uppercase text-xs sm:text-sm">Portfolio</p>
-          <h1 class="text-3xl sm:text-4xl font-black uppercase text-purple-100 mt-2">
-            Selected work
+  <section class="relative px-4 pb-20 pt-32 sm:px-8 lg:px-10">
+    <div class="mx-auto w-full max-w-[88rem]">
+      <div class="grid gap-10 border-b border-neutral-800 pb-12 lg:grid-cols-12 lg:items-end">
+        <div class="lg:col-span-8">
+          <p class="portfolio-meta mb-4 text-xs uppercase tracking-[0.2em] text-neutral-500">
+            Portfolio
+          </p>
+          <h1 class="portfolio-headline font-archivo-black text-[clamp(3.7rem,13vw,11rem)] leading-[0.84] text-neutral-50">
+            Selected<br />
+            Work
           </h1>
         </div>
 
-        <p class="hidden sm:block text-white/75 max-w-md text-sm">
-          Click any project to open a fullscreen gallery.
-        </p>
+        <div class="lg:col-span-4 lg:justify-self-end">
+          <p class="portfolio-meta max-w-sm text-sm text-neutral-300">
+            Product design, UI systems, web execution, 3D production, and animation craft.
+          </p>
+          <NuxtLink
+            to="/"
+            class="portfolio-meta mt-6 inline-flex items-center border border-neutral-700 px-4 py-3 text-xs uppercase tracking-[0.2em] text-neutral-300 transition-colors hover:border-lime-400 hover:text-lime-400 focus-outline motion-reduce:transition-none"
+          >
+            Back home
+          </NuxtLink>
+        </div>
       </div>
 
-      <!-- Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div class="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
         <button
           v-for="project in projects"
           :key="project.id"
           type="button"
-          class="group relative overflow-hidden rounded-2xl border border-white/15 bg-black/40 text-left"
+          class="portfolio-card group relative overflow-hidden border border-neutral-800 bg-neutral-900 text-left"
           @click="openProject(project)"
         >
-          <div class="aspect-[4/3] w-full overflow-hidden">
+          <div class="aspect-[4/3] overflow-hidden">
             <img
               :src="project.cover"
               :alt="project.title"
-              class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+              class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04] motion-reduce:transition-none"
               loading="lazy"
             />
           </div>
 
-          <div class="p-5">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <h2 class="text-white font-bold text-lg leading-tight">
-                  {{ project.title }}
-                </h2>
-                <p class="text-white/70 text-sm mt-1">
-                  {{ project.subtitle }}
-                </p>
-              </div>
-
-              <span class="chip">
-                {{ project.tag }}
-              </span>
-            </div>
+          <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent px-5 pb-5 pt-16">
+            <p class="text-xs uppercase tracking-[0.2em] text-neutral-400">{{ project.tag }}</p>
+            <h2 class="mt-2 text-3xl font-black uppercase text-neutral-50 transition-transform duration-300 group-hover:-translate-y-1 motion-reduce:transition-none">
+              {{ project.title }}
+            </h2>
+            <p class="mt-2 max-w-md text-sm text-neutral-300">
+              {{ project.subtitle }}
+            </p>
           </div>
-
-          <div
-            class="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
-            style="background: linear-gradient(to top, rgba(0,0,0,0.65), rgba(0,0,0,0) 55%);"
-          />
         </button>
       </div>
     </div>
 
-    <!-- Fullscreen modal -->
     <Teleport to="body">
-      <div v-if="isOpen" class="fixed inset-0 z-[60]">
-        <!-- Backdrop -->
-        <div class="absolute inset-0 bg-black/80" @click="close"></div>
+      <div v-if="isOpen" class="fixed inset-0 z-[70]">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-sm" @click="close" />
 
-        <!-- Modal content -->
-        <div class="absolute inset-0 flex items-center justify-center p-4 sm:p-6">
-          <div class="relative w-full h-full max-w-6xl">
-            <!-- Close button -->
+        <div class="absolute inset-0 flex items-center justify-center p-3 sm:p-6">
+          <article class="relative h-full w-full max-w-7xl border border-neutral-700 bg-neutral-950">
             <button
               type="button"
-              class="absolute right-3 top-3 z-10 rounded-full bg-black/60 text-white border border-white/20 px-4 py-2 hover:bg-black/80"
+              class="absolute right-3 top-3 z-20 border border-neutral-600 bg-black/60 px-4 py-2 text-xs uppercase tracking-[0.2em] text-neutral-100 transition-colors hover:border-lime-400 hover:text-lime-400 focus-outline motion-reduce:transition-none"
               @click="close"
             >
               Close
             </button>
 
-            <!-- Header -->
-            <div class="absolute left-3 top-3 z-10 pr-28">
-              <div class="rounded-2xl bg-black/55 border border-white/15 px-4 py-3">
-                <p class="text-white font-bold leading-tight">
-                  {{ activeProject?.title }}
-                </p>
-                <p class="text-white/70 text-sm">
-                  {{ activeProject?.subtitle }}
+            <header class="absolute left-3 top-3 z-20 max-w-[70%] border border-neutral-700 bg-black/65 px-4 py-3">
+              <p class="text-xs uppercase tracking-[0.2em] text-neutral-400">{{ activeProject?.tag }}</p>
+              <h3 class="mt-1 text-xl font-black uppercase text-neutral-50 sm:text-2xl">
+                {{ activeProject?.title }}
+              </h3>
+              <p class="mt-1 text-sm text-neutral-300">
+                {{ activeProject?.subtitle }}
+              </p>
+            </header>
+
+            <div class="grid h-full grid-rows-[1fr_auto]">
+              <div class="relative flex items-center justify-center overflow-hidden bg-neutral-950 p-6">
+                <img
+                  v-if="activeImage"
+                  :src="activeImage"
+                  :alt="activeProject?.title || 'Project image'"
+                  class="max-h-full max-w-full object-contain"
+                />
+
+                <button
+                  type="button"
+                  class="nav-btn left-3"
+                  @click="prev"
+                  :disabled="!canNav"
+                  aria-label="Previous image"
+                >
+                  Prev
+                </button>
+                <button
+                  type="button"
+                  class="nav-btn right-3"
+                  @click="next"
+                  :disabled="!canNav"
+                  aria-label="Next image"
+                >
+                  Next
+                </button>
+
+                <p class="absolute bottom-4 left-1/2 -translate-x-1/2 border border-neutral-700 bg-black/65 px-3 py-1 text-xs uppercase tracking-[0.2em] text-neutral-200">
+                  {{ activeIndex + 1 }} / {{ activeProject?.images?.length || 0 }}
                 </p>
               </div>
-            </div>
 
-            <!-- Gallery -->
-            <div class="h-full w-full rounded-2xl overflow-hidden border border-white/15 bg-black">
-              <div class="h-full w-full grid grid-rows-[1fr_auto]">
-                <!-- Main image -->
-                <div class="relative h-full w-full flex items-center justify-center">
-                  <img
-                    v-if="activeImage"
-                    :src="activeImage"
-                    :alt="activeProject?.title || 'Project image'"
-                    class="max-h-full max-w-full object-contain"
-                  />
-
-                  <!-- Prev / Next -->
+              <div class="overflow-x-auto border-t border-neutral-800 bg-neutral-900/95">
+                <div class="flex gap-2 p-3">
                   <button
+                    v-for="(img, idx) in activeProject?.images || []"
+                    :key="img"
                     type="button"
-                    class="nav-btn left-3"
-                    @click="prev"
-                    :disabled="!canNav"
+                    :class="idx === activeIndex ? 'thumb thumb--active' : 'thumb'"
+                    :aria-label="`Open thumbnail ${idx + 1}`"
+                    @click="activeIndex = idx"
                   >
-                    Prev
+                    <img :src="img" :alt="`Thumbnail ${idx + 1}`" class="h-full w-full object-cover" />
                   </button>
-                  <button
-                    type="button"
-                    class="nav-btn right-3"
-                    @click="next"
-                    :disabled="!canNav"
-                  >
-                    Next
-                  </button>
-
-                  <!-- Counter -->
-                  <div class="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/60 border border-white/15 px-3 py-1 text-white/85 text-sm">
-                    {{ activeIndex + 1 }} / {{ activeProject?.images?.length || 0 }}
-                  </div>
-                </div>
-
-                <!-- Thumbnails -->
-                <div class="w-full overflow-x-auto border-t border-white/10 bg-black/60">
-                  <div class="flex gap-2 p-3">
-                    <button
-                      v-for="(img, idx) in (activeProject?.images || [])"
-                      :key="img"
-                      type="button"
-                      class="thumb"
-                      :class="{ 'thumb--active': idx === activeIndex }"
-                      @click="activeIndex = idx"
-                    >
-                      <img :src="img" :alt="`Thumbnail ${idx + 1}`" class="h-full w-full object-cover" />
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
-
-            <!-- Keyboard hint (desktop) -->
-            <p class="hidden md:block text-white/60 text-xs mt-3 text-center">
-              Tip: use ← / → to navigate, ESC to close.
-            </p>
-          </div>
+          </article>
         </div>
       </div>
     </Teleport>
   </section>
 </template>
 
-<script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { portfolioProjects, type PortfolioProject } from "~/data/portfolioProjects";
+import { useAnime } from "~/composables/useAnime";
+import { usePrefersReducedMotion } from "~/composables/usePrefersReducedMotion";
 
-/**
- * DATA MODEL (simple):
- * - Put image files in /public/portfolio/<project-slug>/<image>.jpg
- * - Reference them with /portfolio/... paths below.
- */
-const projects = ref([
-  {
-    id: 'game-01',
-    title: 'Neon Runner',
-    subtitle: 'Game UI + asset set',
-    tag: 'Game',
-    cover: '/portfolio/neon-runner/cover.jpg',
-    images: [
-      '/portfolio/neon-runner/01.jpg',
-      '/portfolio/neon-runner/02.jpg',
-      '/portfolio/neon-runner/03.jpg'
-    ]
-  },
-  {
-    id: 'web-01',
-    title: 'Studio Site',
-    subtitle: 'Web design + UI system',
-    tag: 'Web',
-    cover: '/portfolio/studio-site/cover.jpg',
-    images: [
-      '/portfolio/studio-site/01.jpg',
-      '/portfolio/studio-site/02.jpg',
-      '/portfolio/studio-site/03.jpg'
-    ]
-  },
-  {
-    id: 'anim-01',
-    title: 'Motion Study',
-    subtitle: '2D/3D animation frames',
-    tag: 'Animation',
-    cover: '/portfolio/motion-study/cover.jpg',
-    images: [
-      '/portfolio/motion-study/01.jpg',
-      '/portfolio/motion-study/02.jpg'
-    ]
-  }
-])
+const projects = portfolioProjects;
+const isOpen = ref(false);
+const activeProject = ref<PortfolioProject | null>(null);
+const activeIndex = ref(0);
 
-const isOpen = ref(false)
-const activeProject = ref(null)
-const activeIndex = ref(0)
+const activeImage = computed(() => activeProject.value?.images?.[activeIndex.value] || "");
+const canNav = computed(() => (activeProject.value?.images?.length || 0) > 1);
 
-const activeImage = computed(() => activeProject.value?.images?.[activeIndex.value] || '')
-const canNav = computed(() => (activeProject.value?.images?.length || 0) > 1)
+const { loadAnime, track } = useAnime();
+const { prefersReducedMotion } = usePrefersReducedMotion();
 
-function openProject(project) {
-  activeProject.value = project
-  activeIndex.value = 0
-  isOpen.value = true
-  document.documentElement.style.overflow = 'hidden'
+function openProject(project: PortfolioProject) {
+  activeProject.value = project;
+  activeIndex.value = 0;
+  isOpen.value = true;
+  document.documentElement.style.overflow = "hidden";
 }
 
 function close() {
-  isOpen.value = false
-  activeProject.value = null
-  activeIndex.value = 0
-  document.documentElement.style.overflow = ''
+  isOpen.value = false;
+  activeProject.value = null;
+  activeIndex.value = 0;
+  document.documentElement.style.overflow = "";
 }
 
 function prev() {
-  if (!activeProject.value?.images?.length) return
-  const n = activeProject.value.images.length
-  activeIndex.value = (activeIndex.value - 1 + n) % n
+  if (!activeProject.value?.images.length) return;
+  const total = activeProject.value.images.length;
+  activeIndex.value = (activeIndex.value - 1 + total) % total;
 }
 
 function next() {
-  if (!activeProject.value?.images?.length) return
-  const n = activeProject.value.images.length
-  activeIndex.value = (activeIndex.value + 1) % n
+  if (!activeProject.value?.images.length) return;
+  const total = activeProject.value.images.length;
+  activeIndex.value = (activeIndex.value + 1) % total;
 }
 
-function onKeydown(e) {
-  if (!isOpen.value) return
-  if (e.key === 'Escape') close()
-  if (e.key === 'ArrowLeft') prev()
-  if (e.key === 'ArrowRight') next()
+function onKeydown(event: KeyboardEvent) {
+  if (!isOpen.value) return;
+  if (event.key === "Escape") close();
+  if (event.key === "ArrowLeft") prev();
+  if (event.key === "ArrowRight") next();
 }
 
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+onMounted(async () => {
+  window.addEventListener("keydown", onKeydown);
+
+  if (prefersReducedMotion.value) return;
+  const { animate, stagger } = await loadAnime();
+  const cards = document.querySelectorAll(".portfolio-card");
+  const meta = document.querySelectorAll(".portfolio-meta, .portfolio-headline");
+
+  track(
+    animate(meta, {
+      opacity: [0, 1],
+      translateY: [14, 0],
+      duration: 700,
+      delay: stagger(80),
+      ease: "outCubic",
+    }),
+  );
+
+  track(
+    animate(cards, {
+      opacity: [0, 1],
+      translateY: [26, 0],
+      duration: 850,
+      delay: stagger(100, { start: 220 }),
+      ease: "outExpo",
+    }),
+  );
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", onKeydown);
+  document.documentElement.style.overflow = "";
+});
 </script>
 
 <style scoped>
-.chip {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(0, 0, 0, 0.45);
-  color: rgba(255, 255, 255, 0.9);
-  padding: 0.3rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  line-height: 1;
-  white-space: nowrap;
-}
-
 .nav-btn {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.55);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  padding: 0.5rem 0.9rem;
+  border: 1px solid rgba(82, 82, 82, 1);
+  background: rgba(10, 10, 10, 0.72);
+  color: rgba(250, 250, 250, 1);
+  padding: 0.55rem 0.92rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
+
 .nav-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.38;
   cursor: default;
 }
 
 .thumb {
-  width: 88px;
+  width: 92px;
   height: 64px;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(64, 64, 64, 1);
   flex: 0 0 auto;
+  overflow: hidden;
 }
+
 .thumb--active {
-  border-color: rgba(255, 255, 255, 0.45);
+  border-color: rgba(163, 230, 53, 1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .portfolio-meta,
+  .portfolio-headline,
+  .portfolio-card {
+    opacity: 0;
+  }
 }
 </style>

@@ -1,18 +1,23 @@
 <template>
-  <main class="min-h-screen bg-purple-600">
-    <div class="mx-auto w-full max-w-6xl px-6 sm:px-10 lg:px-16 pt-8">
-      <NuxtLink
-        to="/"
-        class="inline-flex items-center gap-2 rounded-full bg-black/50 text-white border border-white/20 px-4 py-2 hover:bg-black/70"
-      >
-        Home
-      </NuxtLink>
-    </div>
-
+  <main class="relative z-10 min-h-screen bg-neutral-950 text-neutral-50">
+    <HeroScene />
+    <SiteHeader />
     <PortfolioGrid />
+    <SiteFooter />
   </main>
 </template>
 
-<script setup>
-import PortfolioGrid from '~/components/PortfolioGrid.vue'
+<script setup lang="ts">
+import HeroScene from "~/components/three/HeroScene.client.vue";
+
+useHead({
+  title: "f00sh — portfolio",
+  meta: [
+    {
+      name: "description",
+      content:
+        "Selected FOOSH work across web, UI/UX, game assets, 3D, and animation.",
+    },
+  ],
+});
 </script>
