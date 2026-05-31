@@ -79,6 +79,7 @@
 <script setup lang="ts">
 import * as THREE from "three";
 import { onBeforeUnmount, onMounted, ref } from "vue";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { useGsap } from "~/composables/useGsap";
 import { usePrefersReducedMotion } from "~/composables/usePrefersReducedMotion";
 
@@ -107,13 +108,34 @@ type FlightPlane = {
   glowMaterial: THREE.MeshBasicMaterial;
   basePosition: THREE.Vector3;
   baseRotation: THREE.Euler;
+  mouseRotation: THREE.Vector3;
+  targetMouseRotation: THREE.Vector3;
   floatOffset: number;
+};
+
+type PathWire = {
+  object: THREE.Object3D;
+  basePosition: THREE.Vector3;
+  baseRotation: THREE.Euler;
+  mouseRotation: THREE.Vector3;
+  targetMouseRotation: THREE.Vector3;
+  respondsToMouse: boolean;
+  floatOffset: number;
+};
+
+type DustField = {
+  points: THREE.Points;
+  positions: Float32Array;
+  velocities: Float32Array;
+  seeds: Float32Array;
 };
 
 const root = ref<HTMLElement | null>(null);
 const stage = ref<HTMLElement | null>(null);
 const { loadGsap, trackAnimation, addCleanup } = useGsap();
 const { prefersReducedMotion } = usePrefersReducedMotion();
+const lavandaUrl = new URL("../../assets/3D/lavanda01.glb", import.meta.url).href;
+const lavandaLayer = 1;
 
 const flightItems: FlightItem[] = [
   {
@@ -177,33 +199,33 @@ const flightItems: FlightItem[] = [
 
 const flightPath: FlightPoint[] = [
   {
-    plane: { x: -1.35, y: 0.35, z: -4.2 },
-    camera: { x: -0.18, y: 0.22, z: 1.9 },
-    rotation: { x: 0.02, y: 0.24, z: -0.06 },
+    plane: { x: -1.65, y: 0.45, z: -6.2 },
+    camera: { x: -0.28, y: 0.24, z: 1.2 },
+    rotation: { x: 0.025, y: 0.28, z: -0.06 },
   },
   {
-    plane: { x: 2.35, y: -0.55, z: -10.4 },
-    camera: { x: 1.85, y: -0.4, z: -5.75 },
-    rotation: { x: -0.04, y: -0.34, z: 0.08 },
+    plane: { x: 3.35, y: -0.75, z: -19.5 },
+    camera: { x: 2.58, y: -0.55, z: -12.2 },
+    rotation: { x: -0.045, y: -0.42, z: 0.09 },
   },
   {
-    plane: { x: -2.6, y: 1.0, z: -16.7 },
-    camera: { x: -2.0, y: 0.78, z: -12.2 },
-    rotation: { x: 0.03, y: 0.38, z: -0.05 },
+    plane: { x: -3.55, y: 1.15, z: -33.0 },
+    camera: { x: -2.85, y: 0.92, z: -25.7 },
+    rotation: { x: 0.035, y: 0.46, z: -0.07 },
   },
   {
-    plane: { x: 3.15, y: 0.7, z: -23.2 },
-    camera: { x: 2.48, y: 0.6, z: -18.85 },
-    rotation: { x: -0.02, y: -0.42, z: 0.05 },
+    plane: { x: 4.15, y: 0.86, z: -47.6 },
+    camera: { x: 3.26, y: 0.68, z: -40.2 },
+    rotation: { x: -0.025, y: -0.5, z: 0.07 },
   },
   {
-    plane: { x: -1.85, y: -1.05, z: -30.0 },
-    camera: { x: -1.45, y: -0.86, z: -25.55 },
-    rotation: { x: 0.05, y: 0.25, z: 0.1 },
+    plane: { x: -2.65, y: -1.18, z: -61.8 },
+    camera: { x: -2.04, y: -0.96, z: -54.4 },
+    rotation: { x: 0.055, y: 0.32, z: 0.12 },
   },
   {
-    plane: { x: 0.35, y: 0.04, z: -37.5 },
-    camera: { x: 0.1, y: 0.02, z: -33.0 },
+    plane: { x: 0.42, y: 0.04, z: -76.0 },
+    camera: { x: 0.1, y: 0.04, z: -68.4 },
     rotation: { x: 0.0, y: -0.05, z: -0.03 },
   },
 ];
@@ -213,18 +235,24 @@ let scene: THREE.Scene | null = null;
 let camera: THREE.PerspectiveCamera | null = null;
 let galleryRoot: THREE.Group | null = null;
 let starField: THREE.Points | null = null;
+let dustField: DustField | null = null;
+let plantGroup: THREE.Group | null = null;
 let frameId = 0;
 let isVisible = true;
 let pointerX = 0;
 let pointerY = 0;
 let clock = new THREE.Clock();
+let lastFrameTime = 0;
+let lastMouseShuffle = 0;
+let lastPointerMoveAt = 0;
 const cameraTarget = new THREE.Vector3(flightPath[0].plane.x, flightPath[0].plane.y, flightPath[0].plane.z);
 const lookAtTarget = new THREE.Vector3();
 const flightPlanes: FlightPlane[] = [];
+const pathWires: PathWire[] = [];
 const loadedTextures: THREE.Texture[] = [];
 
 const createStarField = () => {
-  const count = 1500;
+  const count = 2200;
   const positions = new Float32Array(count * 3);
   const colors = new Float32Array(count * 3);
   const colorA = new THREE.Color(0xd9ff66);
@@ -232,8 +260,8 @@ const createStarField = () => {
 
   for (let index = 0; index < count; index += 1) {
     const positionIndex = index * 3;
-    const depth = THREE.MathUtils.randFloat(-43, 2);
-    const spread = THREE.MathUtils.mapLinear(depth, 2, -43, 7, 18);
+    const depth = THREE.MathUtils.randFloat(-84, 3);
+    const spread = THREE.MathUtils.mapLinear(depth, 3, -84, 8, 24);
     positions[positionIndex] = THREE.MathUtils.randFloatSpread(spread);
     positions[positionIndex + 1] = THREE.MathUtils.randFloatSpread(spread * 0.55);
     positions[positionIndex + 2] = depth;
@@ -257,6 +285,508 @@ const createStarField = () => {
   });
 
   return new THREE.Points(geometry, material);
+};
+
+const seedDustParticle = (
+  positions: Float32Array,
+  velocities: Float32Array,
+  seeds: Float32Array,
+  index: number,
+  cameraPosition?: THREE.Vector3,
+) => {
+  const offset = index * 3;
+  const z = cameraPosition ? cameraPosition.z - THREE.MathUtils.randFloat(2.5, 22) : THREE.MathUtils.randFloat(-82, 4);
+  const spread = cameraPosition ? THREE.MathUtils.randFloat(2.8, 9.5) : THREE.MathUtils.mapLinear(z, 4, -82, 5, 18);
+
+  positions[offset] = (cameraPosition?.x ?? 0) + THREE.MathUtils.randFloatSpread(spread);
+  positions[offset + 1] = (cameraPosition?.y ?? 0) + THREE.MathUtils.randFloat(-3.6, 4.2);
+  positions[offset + 2] = z;
+
+  velocities[offset] = THREE.MathUtils.randFloatSpread(0.08);
+  velocities[offset + 1] = THREE.MathUtils.randFloatSpread(0.08);
+  velocities[offset + 2] = THREE.MathUtils.randFloat(-0.16, 0.04);
+  seeds[index] = Math.random() * Math.PI * 2;
+};
+
+const createDustField = () => {
+  const count = 760;
+  const positions = new Float32Array(count * 3);
+  const velocities = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const seeds = new Float32Array(count);
+  const warmDust = new THREE.Color(0xf4f0cf);
+  const greenDust = new THREE.Color(0xd9ff66);
+  const cyanDust = new THREE.Color(0x64f4d0);
+
+  for (let index = 0; index < count; index += 1) {
+    const colorOffset = index * 3;
+    const color = warmDust.clone().lerp(index % 3 === 0 ? cyanDust : greenDust, Math.random() * 0.28);
+    seedDustParticle(positions, velocities, seeds, index);
+    colors[colorOffset] = color.r;
+    colors[colorOffset + 1] = color.g;
+    colors[colorOffset + 2] = color.b;
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
+  const material = new THREE.PointsMaterial({
+    size: 0.052,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.62,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+
+  return {
+    points: new THREE.Points(geometry, material),
+    positions,
+    velocities,
+    seeds,
+  } satisfies DustField;
+};
+
+const updateDustField = (delta: number, elapsed: number) => {
+  if (!dustField || !camera) return;
+
+  const positions = dustField.positions;
+  const velocities = dustField.velocities;
+  const seeds = dustField.seeds;
+  const cameraPosition = camera.position;
+  const count = seeds.length;
+  const pushRadius = 4.8;
+  const pushRadiusSq = pushRadius * pushRadius;
+
+  for (let index = 0; index < count; index += 1) {
+    const offset = index * 3;
+    let x = positions[offset];
+    let y = positions[offset + 1];
+    let z = positions[offset + 2];
+    const dx = x - cameraPosition.x;
+    const dy = y - cameraPosition.y;
+    const dz = z - cameraPosition.z;
+    const distanceSq = dx * dx + dy * dy + dz * dz;
+
+    if (z > cameraPosition.z + 5 || z < cameraPosition.z - 28 || Math.abs(dx) > 15 || Math.abs(dy) > 9) {
+      seedDustParticle(positions, velocities, seeds, index, cameraPosition);
+      continue;
+    }
+
+    if (distanceSq < pushRadiusSq) {
+      const distance = Math.max(Math.sqrt(distanceSq), 0.001);
+      const influence = (1 - distance / pushRadius) ** 2;
+      const seed = seeds[index];
+      const randomX = Math.sin(elapsed * 4.7 + seed) * 0.48;
+      const randomY = Math.cos(elapsed * 5.1 + seed * 1.7) * 0.48;
+      const randomZ = Math.sin(elapsed * 3.9 + seed * 2.3) * 0.34;
+
+      velocities[offset] += (dx / distance + randomX) * influence * 8.4 * delta;
+      velocities[offset + 1] += (dy / distance + randomY) * influence * 8.4 * delta;
+      velocities[offset + 2] += (dz / distance + randomZ) * influence * 8.4 * delta;
+    } else {
+      velocities[offset] += Math.sin(elapsed * 0.9 + seeds[index]) * 0.012 * delta;
+      velocities[offset + 1] += Math.cos(elapsed * 0.8 + seeds[index]) * 0.012 * delta;
+      velocities[offset + 2] -= 0.012 * delta;
+    }
+
+    velocities[offset] *= 0.986;
+    velocities[offset + 1] *= 0.986;
+    velocities[offset + 2] *= 0.986;
+
+    x += velocities[offset];
+    y += velocities[offset + 1];
+    z += velocities[offset + 2];
+
+    positions[offset] = x;
+    positions[offset + 1] = y;
+    positions[offset + 2] = z;
+  }
+
+  const positionAttribute = dustField.points.geometry.getAttribute("position") as THREE.BufferAttribute;
+  positionAttribute.needsUpdate = true;
+};
+
+const createLineSegments = (
+  segments: Array<[THREE.Vector3, THREE.Vector3]>,
+  material: THREE.LineBasicMaterial,
+) => {
+  const positions = new Float32Array(segments.length * 6);
+
+  segments.forEach(([start, end], index) => {
+    const offset = index * 6;
+    positions[offset] = start.x;
+    positions[offset + 1] = start.y;
+    positions[offset + 2] = start.z;
+    positions[offset + 3] = end.x;
+    positions[offset + 4] = end.y;
+    positions[offset + 5] = end.z;
+  });
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+  return new THREE.LineSegments(geometry, material);
+};
+
+const createWireGrid = (
+  width: number,
+  height: number,
+  columns: number,
+  rows: number,
+  color: number,
+  opacity: number,
+) => {
+  const segments: Array<[THREE.Vector3, THREE.Vector3]> = [];
+  const halfWidth = width * 0.5;
+  const halfHeight = height * 0.5;
+
+  for (let column = 0; column <= columns; column += 1) {
+    const x = THREE.MathUtils.mapLinear(column, 0, columns, -halfWidth, halfWidth);
+    segments.push([new THREE.Vector3(x, -halfHeight, 0), new THREE.Vector3(x, halfHeight, 0)]);
+  }
+
+  for (let row = 0; row <= rows; row += 1) {
+    const y = THREE.MathUtils.mapLinear(row, 0, rows, -halfHeight, halfHeight);
+    segments.push([new THREE.Vector3(-halfWidth, y, 0), new THREE.Vector3(halfWidth, y, 0)]);
+  }
+
+  return createLineSegments(
+    segments,
+    new THREE.LineBasicMaterial({
+      color,
+      transparent: true,
+      opacity,
+      depthWrite: false,
+    }),
+  );
+};
+
+const registerPathWire = (object: THREE.Object3D, index: number, respondsToMouse = true) => {
+  pathWires.push({
+    object,
+    basePosition: object.position.clone(),
+    baseRotation: object.rotation.clone(),
+    mouseRotation: new THREE.Vector3(),
+    targetMouseRotation: new THREE.Vector3(),
+    respondsToMouse,
+    floatOffset: index * 0.57,
+  });
+};
+
+const terrainBounds = {
+  minX: -9.5,
+  maxX: 9.5,
+  minZ: -82,
+  maxZ: 2,
+  xSteps: 18,
+  zSteps: 34,
+} as const;
+
+const terrainHeight = (x: number, z: number) =>
+  -2.45 + Math.sin(x * 0.72 + z * 0.12) * 0.18 + Math.cos(z * 0.17) * 0.12;
+
+const terrainNormal = (x: number, z: number) => {
+  const sampleDistance = 0.42;
+  const heightLeft = terrainHeight(x - sampleDistance, z);
+  const heightRight = terrainHeight(x + sampleDistance, z);
+  const heightBack = terrainHeight(x, z - sampleDistance);
+  const heightFront = terrainHeight(x, z + sampleDistance);
+  const dx = (heightRight - heightLeft) / (sampleDistance * 2);
+  const dz = (heightFront - heightBack) / (sampleDistance * 2);
+
+  return new THREE.Vector3(-dx, 1, -dz).normalize();
+};
+
+const createTerrainGrid = () => {
+  const segments: Array<[THREE.Vector3, THREE.Vector3]> = [];
+  const { minX, maxX, minZ, maxZ, xSteps, zSteps } = terrainBounds;
+
+  for (let zIndex = 0; zIndex <= zSteps; zIndex += 1) {
+    const z = THREE.MathUtils.mapLinear(zIndex, 0, zSteps, maxZ, minZ);
+    for (let xIndex = 0; xIndex < xSteps; xIndex += 1) {
+      const xA = THREE.MathUtils.mapLinear(xIndex, 0, xSteps, minX, maxX);
+      const xB = THREE.MathUtils.mapLinear(xIndex + 1, 0, xSteps, minX, maxX);
+      segments.push([
+        new THREE.Vector3(xA, terrainHeight(xA, z), z),
+        new THREE.Vector3(xB, terrainHeight(xB, z), z),
+      ]);
+    }
+  }
+
+  for (let xIndex = 0; xIndex <= xSteps; xIndex += 1) {
+    const x = THREE.MathUtils.mapLinear(xIndex, 0, xSteps, minX, maxX);
+    for (let zIndex = 0; zIndex < zSteps; zIndex += 1) {
+      const zA = THREE.MathUtils.mapLinear(zIndex, 0, zSteps, maxZ, minZ);
+      const zB = THREE.MathUtils.mapLinear(zIndex + 1, 0, zSteps, maxZ, minZ);
+      segments.push([
+        new THREE.Vector3(x, terrainHeight(x, zA), zA),
+        new THREE.Vector3(x, terrainHeight(x, zB), zB),
+      ]);
+    }
+  }
+
+  return createLineSegments(
+    segments,
+    new THREE.LineBasicMaterial({
+      color: 0x5cf4cc,
+      transparent: true,
+      opacity: 0.2,
+      depthWrite: false,
+    }),
+  );
+};
+
+const createTerrainShadowReceiver = () => {
+  const { minX, maxX, minZ, maxZ } = terrainBounds;
+  const xSegments = 48;
+  const zSegments = 144;
+  const positions: number[] = [];
+  const indices: number[] = [];
+
+  for (let zIndex = 0; zIndex <= zSegments; zIndex += 1) {
+    const z = THREE.MathUtils.mapLinear(zIndex, 0, zSegments, maxZ, minZ);
+    for (let xIndex = 0; xIndex <= xSegments; xIndex += 1) {
+      const x = THREE.MathUtils.mapLinear(xIndex, 0, xSegments, minX, maxX);
+      positions.push(x, terrainHeight(x, z) + 0.018, z);
+    }
+  }
+
+  for (let zIndex = 0; zIndex < zSegments; zIndex += 1) {
+    for (let xIndex = 0; xIndex < xSegments; xIndex += 1) {
+      const topLeft = zIndex * (xSegments + 1) + xIndex;
+      const topRight = topLeft + 1;
+      const bottomLeft = topLeft + xSegments + 1;
+      const bottomRight = bottomLeft + 1;
+      indices.push(topLeft, bottomLeft, topRight, topRight, bottomLeft, bottomRight);
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+
+  const material = new THREE.ShadowMaterial({
+    opacity: 0.3,
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  const receiver = new THREE.Mesh(geometry, material);
+  receiver.name = "terrain-shadow-receiver";
+  receiver.layers.set(lavandaLayer);
+  receiver.castShadow = false;
+  receiver.receiveShadow = true;
+  receiver.frustumCulled = false;
+
+  return receiver;
+};
+
+const createPortalWire = (index: number, pointA: FlightPoint, pointB: FlightPoint) => {
+  const color = index % 2 === 0 ? 0xd9ff66 : 0x64f4d0;
+  const material = new THREE.LineBasicMaterial({
+    color,
+    transparent: true,
+    opacity: 0.36,
+    depthWrite: false,
+  });
+  const width = 4.8 + index * 0.55;
+  const height = 2.4 + (index % 3) * 0.7;
+  const halfWidth = width * 0.5;
+  const halfHeight = height * 0.5;
+  const shape = index % 4;
+  const points =
+    shape === 0
+      ? [
+          new THREE.Vector3(-halfWidth, -halfHeight, 0),
+          new THREE.Vector3(halfWidth, -halfHeight * 0.75, 0),
+          new THREE.Vector3(halfWidth * 0.9, halfHeight, 0),
+          new THREE.Vector3(-halfWidth * 0.75, halfHeight * 0.85, 0),
+        ]
+      : shape === 1
+        ? [
+            new THREE.Vector3(0, halfHeight, 0),
+            new THREE.Vector3(halfWidth, 0, 0),
+            new THREE.Vector3(0, -halfHeight, 0),
+            new THREE.Vector3(-halfWidth, 0, 0),
+          ]
+        : shape === 2
+          ? [
+              new THREE.Vector3(-halfWidth, -halfHeight, 0),
+              new THREE.Vector3(halfWidth, -halfHeight, 0),
+              new THREE.Vector3(halfWidth * 0.42, halfHeight, 0),
+              new THREE.Vector3(-halfWidth * 0.55, halfHeight * 0.72, 0),
+            ]
+          : [
+              new THREE.Vector3(-halfWidth, 0, 0),
+              new THREE.Vector3(-halfWidth * 0.2, halfHeight, 0),
+              new THREE.Vector3(halfWidth, halfHeight * 0.15, 0),
+              new THREE.Vector3(halfWidth * 0.2, -halfHeight, 0),
+            ];
+
+  const segments: Array<[THREE.Vector3, THREE.Vector3]> = points.map((point, pointIndex) => [
+    point,
+    points[(pointIndex + 1) % points.length],
+  ]);
+  segments.push([new THREE.Vector3(-halfWidth * 0.55, 0, 0), new THREE.Vector3(halfWidth * 0.55, 0, 0)]);
+  segments.push([new THREE.Vector3(0, -halfHeight * 0.55, 0), new THREE.Vector3(0, halfHeight * 0.55, 0)]);
+
+  const portal = createLineSegments(segments, material);
+  portal.position.set(
+    (pointA.plane.x + pointB.plane.x) * 0.5,
+    (pointA.plane.y + pointB.plane.y) * 0.5,
+    (pointA.plane.z + pointB.plane.z) * 0.5,
+  );
+  portal.rotation.set(0.04 * (index % 2 === 0 ? 1 : -1), (index % 2 === 0 ? -0.18 : 0.18), 0.12 * (index - 2));
+
+  return portal;
+};
+
+const createWirePath = () => {
+  if (!galleryRoot) return;
+
+  const terrain = createTerrainGrid();
+  const terrainShadow = createTerrainShadowReceiver();
+  galleryRoot.add(terrain);
+  galleryRoot.add(terrainShadow);
+  registerPathWire(terrain, 0, false);
+  registerPathWire(terrainShadow, 0, false);
+
+  flightPath.slice(0, -1).forEach((point, index) => {
+    const nextPoint = flightPath[index + 1];
+    const portal = createPortalWire(index, point, nextPoint);
+    galleryRoot?.add(portal);
+    registerPathWire(portal, index + 1);
+
+    for (let step = 1; step <= 3; step += 1) {
+      const t = step / 4;
+      const z = THREE.MathUtils.lerp(point.plane.z, nextPoint.plane.z, t);
+      const x = THREE.MathUtils.lerp(point.plane.x, nextPoint.plane.x, t);
+      const side = (index + step) % 2 === 0 ? -1 : 1;
+      const grid = createWireGrid(
+        1.7 + index * 0.42 + step * 0.18,
+        2.4 + ((index + step) % 3) * 0.72,
+        3 + ((index + step) % 4),
+        4 + (step % 3),
+        side < 0 ? 0x64f4d0 : 0xd9ff66,
+        0.18 + step * 0.035,
+      );
+
+      grid.position.set(x + side * (5.3 + step * 0.65), -0.2 + step * 0.55, z);
+      grid.rotation.set(
+        THREE.MathUtils.degToRad(8 * side),
+        THREE.MathUtils.degToRad(side < 0 ? 63 : -63),
+        THREE.MathUtils.degToRad((index - step) * 5),
+      );
+      galleryRoot?.add(grid);
+      registerPathWire(grid, index * 4 + step + 3);
+    }
+  });
+};
+
+const loadLavandaPlants = () => {
+  if (!galleryRoot) return;
+
+  const loader = new GLTFLoader();
+  loader.load(
+    lavandaUrl,
+    (gltf) => {
+      if (!galleryRoot) return;
+
+      const source = gltf.scene;
+      source.updateMatrixWorld(true);
+
+      const size = new THREE.Vector3();
+      new THREE.Box3().setFromObject(source).getSize(size);
+      const maxAxis = Math.max(size.x, size.y, size.z, 0.001);
+      const normalizedScale = 1.44 / maxAxis;
+      const localUpAxis = size.z > size.y * 1.15 ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 1, 0);
+      const shadowReceivers: Array<{ parent: THREE.Object3D; receiver: THREE.Mesh }> = [];
+
+      source.traverse((node) => {
+        node.layers.set(lavandaLayer);
+
+        const mesh = node as THREE.Mesh;
+        if (!mesh.isMesh) return;
+
+        mesh.frustumCulled = true;
+        mesh.castShadow = mesh.name.toLowerCase() !== "ground";
+        mesh.receiveShadow = mesh.name.toLowerCase() === "ground";
+
+        if (mesh.name.toLowerCase() === "ground") {
+          const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          const wireMaterials = materials.map((material) => {
+            const wireMaterial = material.clone();
+            wireMaterial.wireframe = true;
+            wireMaterial.transparent = true;
+            wireMaterial.opacity = 0.5;
+            return wireMaterial;
+          });
+
+          mesh.material = Array.isArray(mesh.material) ? wireMaterials : wireMaterials[0];
+
+          const shadowMaterial = new THREE.ShadowMaterial({
+            opacity: 0.24,
+            transparent: true,
+            depthWrite: false,
+            side: THREE.DoubleSide,
+          });
+          const receiver = new THREE.Mesh(mesh.geometry, shadowMaterial);
+          receiver.name = `${mesh.name}-shadow-receiver`;
+          receiver.position.copy(mesh.position);
+          receiver.quaternion.copy(mesh.quaternion);
+          receiver.scale.copy(mesh.scale);
+          receiver.layers.set(lavandaLayer);
+          receiver.castShadow = false;
+          receiver.receiveShadow = true;
+
+          if (mesh.parent) {
+            shadowReceivers.push({ parent: mesh.parent, receiver });
+          }
+        }
+      });
+
+      shadowReceivers.forEach(({ parent, receiver }) => {
+        parent.add(receiver);
+      });
+
+      plantGroup = new THREE.Group();
+      plantGroup.name = "lavanda-scatter";
+
+      const plantCount = 105;
+      for (let index = 0; index < plantCount; index += 1) {
+        const plant = source.clone(true);
+        plant.traverse((node) => {
+          node.layers.set(lavandaLayer);
+        });
+
+        const sideBias = Math.random() < 0.68 ? (Math.random() < 0.5 ? -1 : 1) : 0;
+        const x = sideBias === 0 ? THREE.MathUtils.randFloatSpread(8.8) : sideBias * THREE.MathUtils.randFloat(3.2, 8.8);
+        const z = THREE.MathUtils.randFloat(-80, -2.5);
+        const y = terrainHeight(x, z) + 0.03;
+        const scale = normalizedScale * THREE.MathUtils.randFloat(0.55, 1.45);
+        const normal = terrainNormal(x, z);
+        const alignToTerrain = new THREE.Quaternion().setFromUnitVectors(localUpAxis, normal);
+        const spinAroundStem = new THREE.Quaternion().setFromAxisAngle(
+          localUpAxis,
+          THREE.MathUtils.randFloat(0, Math.PI * 2),
+        );
+
+        plant.position.set(x, y, z);
+        plant.scale.setScalar(scale);
+        plant.quaternion.copy(alignToTerrain).multiply(spinAroundStem);
+        plantGroup.add(plant);
+      }
+
+      galleryRoot.add(plantGroup);
+    },
+    undefined,
+    () => {
+      // Keep the WebGL scene usable if the optional plant model is unavailable.
+    },
+  );
 };
 
 const createImagePlane = (item: FlightItem, point: FlightPoint, index: number) => {
@@ -316,6 +846,8 @@ const createImagePlane = (item: FlightItem, point: FlightPoint, index: number) =
     glowMaterial,
     basePosition,
     baseRotation,
+    mouseRotation: new THREE.Vector3(),
+    targetMouseRotation: new THREE.Vector3(),
     floatOffset: index * 0.84,
   } satisfies FlightPlane;
 };
@@ -327,26 +859,55 @@ const setupScene = () => {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0x030604, 0);
   stage.value.appendChild(renderer.domElement);
 
   scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x030604, 0.026);
+  scene.fog = new THREE.FogExp2(0x030604, 0.014);
 
-  camera = new THREE.PerspectiveCamera(42, 1, 0.1, 90);
+  camera = new THREE.PerspectiveCamera(42, 1, 0.1, 140);
   camera.position.set(flightPath[0].camera.x, flightPath[0].camera.y, flightPath[0].camera.z);
+  camera.layers.enable(lavandaLayer);
 
   const ambient = new THREE.AmbientLight(0xffffff, 0.38);
-  const laneLight = new THREE.PointLight(0xd9ff66, 4.5, 38);
-  const cyanLight = new THREE.PointLight(0x64f4d0, 3.2, 34);
+  const laneLight = new THREE.PointLight(0xd9ff66, 4.5, 82);
+  const cyanLight = new THREE.PointLight(0x64f4d0, 3.2, 76);
+  const lavandaSun = new THREE.DirectionalLight(0xffb566, 6.2);
+  const lavandaSunTarget = new THREE.Object3D();
   laneLight.position.set(-2, 2, -8);
-  cyanLight.position.set(3, -1.6, -18);
-  scene.add(ambient, laneLight, cyanLight);
+  cyanLight.position.set(3, -1.6, -32);
+  lavandaSun.position.set(-48, 8.5, -10);
+  lavandaSunTarget.position.set(4, -2.25, -48);
+  lavandaSun.target = lavandaSunTarget;
+  lavandaSun.layers.set(lavandaLayer);
+  lavandaSunTarget.layers.set(lavandaLayer);
+  lavandaSun.castShadow = true;
+  lavandaSun.shadow.mapSize.set(2048, 2048);
+  lavandaSun.shadow.bias = -0.00035;
+  lavandaSun.shadow.normalBias = 0.025;
+
+  const sunShadowCamera = lavandaSun.shadow.camera as THREE.OrthographicCamera;
+  sunShadowCamera.left = -68;
+  sunShadowCamera.right = 68;
+  sunShadowCamera.top = 68;
+  sunShadowCamera.bottom = -68;
+  sunShadowCamera.near = 0.5;
+  sunShadowCamera.far = 140;
+  sunShadowCamera.layers.set(lavandaLayer);
+  sunShadowCamera.updateProjectionMatrix();
+
+  scene.add(ambient, laneLight, cyanLight, lavandaSun, lavandaSunTarget);
 
   galleryRoot = new THREE.Group();
   starField = createStarField();
+  dustField = createDustField();
   galleryRoot.add(starField);
+  galleryRoot.add(dustField.points);
   scene.add(galleryRoot);
+  createWirePath();
+  loadLavandaPlants();
 
   flightItems.forEach((item, index) => {
     flightPlanes.push(createImagePlane(item, flightPath[index], index));
@@ -368,17 +929,43 @@ const render = () => {
   if (!renderer || !scene || !camera || !galleryRoot) return;
   if (!isVisible) return;
 
+  const now = performance.now();
+  const delta = lastFrameTime === 0 ? 0.016 : Math.min((now - lastFrameTime) / 1000, 0.04);
+  lastFrameTime = now;
   const elapsed = clock.getElapsedTime();
   const pointerLift = prefersReducedMotion.value ? 0 : 1;
-
-  galleryRoot.rotation.y += (pointerX * 0.035 - galleryRoot.rotation.y) * 0.04;
-  galleryRoot.rotation.x += (-pointerY * 0.025 - galleryRoot.rotation.x) * 0.04;
+  const mouseRecentlyMoved = performance.now() - lastPointerMoveAt < 520;
+  const mouseBlendSpeed = mouseRecentlyMoved ? 0.09 : 0.045;
 
   flightPlanes.forEach((plane, index) => {
     const float = Math.sin(elapsed * 0.72 + plane.floatOffset) * 0.045 * pointerLift;
+    if (!mouseRecentlyMoved) {
+      plane.targetMouseRotation.multiplyScalar(0.92);
+    }
+    plane.mouseRotation.lerp(plane.targetMouseRotation, mouseBlendSpeed);
+
     plane.group.position.y = plane.basePosition.y + float;
-    plane.group.rotation.x = plane.baseRotation.x + Math.sin(elapsed * 0.45 + index) * 0.01 * pointerLift;
-    plane.group.rotation.y = plane.baseRotation.y + Math.cos(elapsed * 0.38 + index) * 0.012 * pointerLift;
+    plane.group.rotation.x =
+      plane.baseRotation.x + Math.sin(elapsed * 0.45 + index) * 0.01 * pointerLift + plane.mouseRotation.x;
+    plane.group.rotation.y =
+      plane.baseRotation.y + Math.cos(elapsed * 0.38 + index) * 0.012 * pointerLift + plane.mouseRotation.y;
+    plane.group.rotation.z = plane.baseRotation.z + plane.mouseRotation.z;
+  });
+
+  pathWires.forEach((wire, index) => {
+    const drift = Math.sin(elapsed * 0.5 + wire.floatOffset) * 0.035 * pointerLift;
+    if (wire.respondsToMouse) {
+      if (!mouseRecentlyMoved) {
+        wire.targetMouseRotation.multiplyScalar(0.9);
+      }
+      wire.mouseRotation.lerp(wire.targetMouseRotation, mouseBlendSpeed);
+    }
+
+    wire.object.position.y = wire.basePosition.y + drift;
+    wire.object.rotation.x = wire.baseRotation.x + wire.mouseRotation.x;
+    wire.object.rotation.y = wire.baseRotation.y + wire.mouseRotation.y;
+    wire.object.rotation.z =
+      wire.baseRotation.z + Math.sin(elapsed * 0.28 + index) * 0.012 * pointerLift + wire.mouseRotation.z;
   });
 
   if (starField) {
@@ -386,9 +973,11 @@ const render = () => {
     starField.rotation.x += 0.00018;
   }
 
+  updateDustField(delta, elapsed);
+
   lookAtTarget.set(
-    cameraTarget.x + pointerX * 0.22,
-    cameraTarget.y - pointerY * 0.16,
+    cameraTarget.x + pointerX * 0.74,
+    cameraTarget.y - pointerY * 0.46,
     cameraTarget.z,
   );
   camera.lookAt(lookAtTarget);
@@ -405,6 +994,33 @@ const stop = () => {
   if (frameId === 0) return;
   window.cancelAnimationFrame(frameId);
   frameId = 0;
+};
+
+const randomRotation = (strength: number) =>
+  new THREE.Vector3(
+    THREE.MathUtils.randFloatSpread(strength),
+    THREE.MathUtils.randFloatSpread(strength),
+    THREE.MathUtils.randFloatSpread(strength * 0.75),
+  );
+
+const shuffleMouseRotations = () => {
+  const now = performance.now();
+  if (now - lastMouseShuffle < 95) return;
+
+  lastMouseShuffle = now;
+  lastPointerMoveAt = now;
+
+  flightPlanes.forEach((plane, index) => {
+    const strength = 0.18 + (index % 3) * 0.045;
+    plane.targetMouseRotation.copy(randomRotation(strength));
+  });
+
+  pathWires.forEach((wire, index) => {
+    if (!wire.respondsToMouse) return;
+
+    const strength = 0.12 + (index % 4) * 0.035;
+    wire.targetMouseRotation.copy(randomRotation(strength));
+  });
 };
 
 const setActivePlane = (index: number, gsap: Awaited<ReturnType<typeof loadGsap>>["gsap"]) => {
@@ -520,6 +1136,7 @@ const setupScroll = async () => {
 const onPointerMove = (event: PointerEvent) => {
   pointerX = (event.clientX / Math.max(window.innerWidth, 1)) * 2 - 1;
   pointerY = (event.clientY / Math.max(window.innerHeight, 1)) * 2 - 1;
+  shuffleMouseRotations();
 };
 
 const onVisibilityChange = () => {
@@ -577,14 +1194,17 @@ onBeforeUnmount(() => {
   camera = null;
   galleryRoot = null;
   starField = null;
+  dustField = null;
+  plantGroup = null;
   flightPlanes.length = 0;
+  pathWires.length = 0;
   loadedTextures.length = 0;
 });
 </script>
 
 <style scoped>
 .scroll-onepager {
-  min-height: 600vh;
+  min-height: 720vh;
 }
 
 .scroll-panel {
