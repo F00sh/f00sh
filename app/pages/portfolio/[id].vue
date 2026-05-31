@@ -1,0 +1,35 @@
+<template>
+  <main class="relative z-10 min-h-screen bg-[var(--foosh-bg)] text-[var(--foosh-text)]">
+    <HeroScene />
+    <SiteHeader />
+    <ProjectDetailView :project="project" />
+    <SiteFooter />
+  </main>
+</template>
+
+<script setup lang="ts">
+import HeroScene from "~/components/three/HeroScene.client.vue";
+import ProjectDetailView from "~/components/portfolio/ProjectDetailView.vue";
+import { portfolioProjectById } from "~/data/portfolioProjects";
+
+const route = useRoute();
+const projectId = String(route.params.id || "");
+const project = portfolioProjectById[projectId];
+
+if (!project) {
+  throw createError({
+    statusCode: 404,
+    statusMessage: "Project not found",
+  });
+}
+
+useHead({
+  title: `f00sh — ${project.title}`,
+  meta: [
+    {
+      name: "description",
+      content: project.description,
+    },
+  ],
+});
+</script>
