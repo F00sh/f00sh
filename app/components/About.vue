@@ -25,8 +25,8 @@
           </h2>
 
           <p class="font-dm-mono mt-6 text-base sm:text-lg text-white">
-            Iâ€™m a versatile product designer working across game design, animation, web design, and
-            visual storytelling. With a bachelorâ€™s degree in product design and a strong art and
+            I'm a versatile product designer working across game design, animation, web design, and
+            visual storytelling. With a bachelor's degree in product design and a strong art and
             design foundation, I create work that is clean, functional, and visually sharp.
           </p>
 

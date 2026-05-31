@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+@layer base {
+  :root {
+    --foosh-accent: #a3e635;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
 @layer utilities {
     .font-archivo-black {
         font-family: "Archivo Black", sans-serif;
@@ -11,5 +27,9 @@
 
     .font-atkinson-hyperlegible {
         font-family: "Atkinson Hyperlegible", sans-serif;
+    }
+
+    .focus-outline {
+        @apply rounded-sm outline-none ring-offset-2 ring-offset-neutral-950 transition-shadow focus-visible:ring-2 focus-visible:ring-lime-400;
     }
 }

@@ -30,7 +30,7 @@
             </ul>
 
             <p class="mt-6 text-white">
-              If you have a direction in mind, Iâ€™ll help you shape it and ship it cleanly.
+              If you have a direction in mind, I'll help you shape it and ship it cleanly.
             </p>
           </div>
         </div>
