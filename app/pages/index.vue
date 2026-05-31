@@ -1,22 +1,20 @@
 <template>
   <main class="relative z-10 bg-neutral-950 text-neutral-50">
     <SiteHeader />
-    <HeroFoosh />
-    <AboutBlock />
-    <HomePortfolioPreview />
-    <ContactBlock />
+    <ScrollOnePager />
     <SiteFooter />
   </main>
 </template>
 
 <script setup lang="ts">
+import ScrollOnePager from "~/components/home/ScrollOnePager.vue";
+
 useHead({
-  title: "f00sh — creative solutions",
+  title: "f00sh - 3D interactive portfolio",
   meta: [
     {
       name: "description",
-      content:
-        "f00sh is a portfolio focused on design, development, art, and landscape work across product, web, and 3D.",
+      content: "A Three.js and GSAP-powered one-page portfolio with scroll-driven 3D transitions.",
     },
   ],
 });
