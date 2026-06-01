@@ -118,6 +118,9 @@ let world: THREE.Group | null = null;
 let particleField: THREE.Points | null = null;
 let grassField: THREE.LineSegments | null = null;
 let treeGroup: THREE.Group | null = null;
+let grassRoots: Float32Array | null = null;
+let grassTips: Float32Array | null = null;
+let grassSeeds: Float32Array | null = null;
 const leafInstances: LeafInstance[] = [];
 let frameId = 0;
 let running = true;
@@ -189,18 +192,23 @@ const createParticles = (count: number) => {
 
 const createGrass = (count: number) => {
   const positions = new Float32Array(count * 6);
+  grassRoots = new Float32Array(count * 3);
+  grassTips = new Float32Array(count * 3);
+  grassSeeds = new Float32Array(count);
   for (let i = 0; i < count; i += 1) {
     const o = i * 6;
+    const r = i * 3;
     const x = THREE.MathUtils.randFloatSpread(28);
     const z = THREE.MathUtils.randFloat(-66, 6);
     const y = terrainHeight(x, z);
     const h = THREE.MathUtils.randFloat(0.16, 0.42);
-    positions[o] = x;
-    positions[o + 1] = y;
-    positions[o + 2] = z;
-    positions[o + 3] = x + THREE.MathUtils.randFloatSpread(0.06);
-    positions[o + 4] = y + h;
-    positions[o + 5] = z + THREE.MathUtils.randFloatSpread(0.06);
+    const tx = x + THREE.MathUtils.randFloatSpread(0.06);
+    const tz = z + THREE.MathUtils.randFloatSpread(0.06);
+    positions[o] = x; positions[o + 1] = y; positions[o + 2] = z;
+    positions[o + 3] = tx; positions[o + 4] = y + h; positions[o + 5] = tz;
+    grassRoots[r] = x; grassRoots[r + 1] = y; grassRoots[r + 2] = z;
+    grassTips[r] = tx; grassTips[r + 1] = y + h; grassTips[r + 2] = tz;
+    grassSeeds[i] = Math.random() * Math.PI * 2;
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -303,21 +311,55 @@ const createTrees = (treeCount: number) => {
 
 const createLandmark = (point: StopPoint, index: number) => {
   const group = new THREE.Group();
-  const base = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.CylinderGeometry(0.55, 0.9, 1.8, 6, 1, true)),
-    new THREE.LineBasicMaterial({ color: 0xd9ff66, transparent: true, opacity: 0.82 }),
-  );
-  const halo = new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints(Array.from({ length: 24 }, (_, i) => {
-      const a = (i / 24) * Math.PI * 2;
-      return new THREE.Vector3(Math.cos(a) * 1.25, 0, Math.sin(a) * 1.25);
-    })),
-    new THREE.LineBasicMaterial({ color: 0x64f4d0, transparent: true, opacity: 0.42 }),
-  );
-  group.position.set(point.look.x, point.look.y + 0.9, point.look.z);
-  halo.position.y = -0.92;
-  base.rotation.y = index * 0.42;
-  group.add(base, halo);
+  const material = new THREE.LineBasicMaterial({ color: 0xd9ff66, transparent: true, opacity: 0.82 });
+
+  const width = 1.5;
+  const seatDepth = 0.52;
+  const seatHeight = 0.42;
+  const backHeight = 0.86;
+  const legInsetX = width * 0.42;
+  const legInsetZ = seatDepth * 0.38;
+
+  const addLine = (a: THREE.Vector3, b: THREE.Vector3) => {
+    const line = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([a, b]),
+      material,
+    );
+    group.add(line);
+  };
+
+  // 4 legs
+  addLine(new THREE.Vector3(-legInsetX, 0, -legInsetZ), new THREE.Vector3(-legInsetX, seatHeight, -legInsetZ));
+  addLine(new THREE.Vector3(legInsetX, 0, -legInsetZ), new THREE.Vector3(legInsetX, seatHeight, -legInsetZ));
+  addLine(new THREE.Vector3(-legInsetX, 0, legInsetZ), new THREE.Vector3(-legInsetX, seatHeight, legInsetZ));
+  addLine(new THREE.Vector3(legInsetX, 0, legInsetZ), new THREE.Vector3(legInsetX, seatHeight, legInsetZ));
+
+  // 3 sitting planks
+  addLine(new THREE.Vector3(-width * 0.5, seatHeight, -seatDepth * 0.32), new THREE.Vector3(width * 0.5, seatHeight, -seatDepth * 0.32));
+  addLine(new THREE.Vector3(-width * 0.5, seatHeight, 0), new THREE.Vector3(width * 0.5, seatHeight, 0));
+  addLine(new THREE.Vector3(-width * 0.5, seatHeight, seatDepth * 0.32), new THREE.Vector3(width * 0.5, seatHeight, seatDepth * 0.32));
+
+  // 3 behind/back planks
+  addLine(new THREE.Vector3(-width * 0.5, seatHeight + 0.16, -seatDepth * 0.48), new THREE.Vector3(width * 0.5, seatHeight + 0.16, -seatDepth * 0.48));
+  addLine(new THREE.Vector3(-width * 0.5, seatHeight + 0.34, -seatDepth * 0.48), new THREE.Vector3(width * 0.5, seatHeight + 0.34, -seatDepth * 0.48));
+  addLine(new THREE.Vector3(-width * 0.5, seatHeight + 0.52, -seatDepth * 0.48), new THREE.Vector3(width * 0.5, seatHeight + 0.52, -seatDepth * 0.48));
+
+  // side lines for back planks supports (left and right)
+  addLine(new THREE.Vector3(-width * 0.5, seatHeight, -seatDepth * 0.42), new THREE.Vector3(-width * 0.5, backHeight, -seatDepth * 0.52));
+  addLine(new THREE.Vector3(width * 0.5, seatHeight, -seatDepth * 0.42), new THREE.Vector3(width * 0.5, backHeight, -seatDepth * 0.52));
+
+  const benchY = terrainHeight(point.look.x, point.look.z) + 0.03;
+  const prev = path[Math.max(0, index - 1)].look;
+  const next = path[Math.min(path.length - 1, index + 1)].look;
+  const tangent = new THREE.Vector3(next.x - prev.x, 0, next.z - prev.z).normalize();
+  const normal = terrainNormal(point.look.x, point.look.z);
+  const side = new THREE.Vector3().crossVectors(normal, tangent).normalize();
+  const adjustedTangent = new THREE.Vector3().crossVectors(side, normal).normalize();
+  const basis = new THREE.Matrix4().makeBasis(adjustedTangent, normal, side);
+  group.position.set(point.look.x, benchY, point.look.z);
+  group.quaternion.setFromRotationMatrix(basis);
+  const extraTurn = Math.PI * 0.5 + (index % 2 === 1 ? Math.PI : 0);
+  group.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(normal, extraTurn));
   return group;
 };
 
@@ -338,8 +380,8 @@ const createPebblePath = () => {
   const tryPlace = (x: number, z: number, radiusMin: number, radiusMax: number, attempts = 10) => {
     for (let k = 0; k < attempts; k += 1) {
       const r = THREE.MathUtils.randFloat(radiusMin, radiusMax);
-      const jx = x + THREE.MathUtils.randFloatSpread(0.12);
-      const jz = z + THREE.MathUtils.randFloatSpread(0.12);
+      const jx = x + THREE.MathUtils.randFloatSpread(0.04);
+      const jz = z + THREE.MathUtils.randFloatSpread(0.04);
       if (canPlace(jx, jz, r)) {
         pebbles.push({ x: jx, z: jz, r });
         return true;
@@ -356,7 +398,7 @@ const createPebblePath = () => {
     const len = Math.max(Math.hypot(dx, dz), 0.001);
     const nx = -dz / len;
     const nz = dx / len;
-    const steps = 26;
+    const steps = 44;
 
     for (let j = 0; j <= steps; j += 1) {
       const t = j / steps;
@@ -364,13 +406,23 @@ const createPebblePath = () => {
       const baseZ = THREE.MathUtils.lerp(a.z, b.z, t);
 
       // Main route pebbles
-      tryPlace(baseX, baseZ, 0.09, 0.28, 8);
+      tryPlace(baseX, baseZ, 0.028, 0.09, 12);
 
       // Side scatter (both sides)
-      const sideOffsetA = THREE.MathUtils.randFloat(0.55, 1.6);
-      const sideOffsetB = THREE.MathUtils.randFloat(0.55, 1.6);
-      tryPlace(baseX + nx * sideOffsetA, baseZ + nz * sideOffsetA, 0.08, 0.24, 6);
-      tryPlace(baseX - nx * sideOffsetB, baseZ - nz * sideOffsetB, 0.08, 0.24, 6);
+      const sideOffsetA = THREE.MathUtils.randFloat(0.16, 0.72);
+      const sideOffsetB = THREE.MathUtils.randFloat(0.16, 0.72);
+      tryPlace(baseX + nx * sideOffsetA, baseZ + nz * sideOffsetA, 0.025, 0.08, 9);
+      tryPlace(baseX - nx * sideOffsetB, baseZ - nz * sideOffsetB, 0.025, 0.08, 9);
+      const sideOffsetC = THREE.MathUtils.randFloat(0.4, 0.95);
+      const sideOffsetD = THREE.MathUtils.randFloat(0.4, 0.95);
+      tryPlace(baseX + nx * sideOffsetC, baseZ + nz * sideOffsetC, 0.022, 0.07, 8);
+      tryPlace(baseX - nx * sideOffsetD, baseZ - nz * sideOffsetD, 0.022, 0.07, 8);
+      if (j % 2 === 0) {
+        const sideOffsetE = THREE.MathUtils.randFloat(0.22, 0.78);
+        const sideOffsetF = THREE.MathUtils.randFloat(0.22, 0.78);
+        tryPlace(baseX + nx * sideOffsetE, baseZ + nz * sideOffsetE, 0.02, 0.065, 7);
+        tryPlace(baseX - nx * sideOffsetF, baseZ - nz * sideOffsetF, 0.02, 0.065, 7);
+      }
     }
   }
 
@@ -421,7 +473,7 @@ const setupScene = () => {
 
   world = new THREE.Group();
   particleField = createParticles(isLowPower ? 520 : 1200);
-  grassField = createGrass(isLowPower ? 1400 : 3500);
+  grassField = createGrass(isLowPower ? 2600 : 6200);
   treeGroup = createTrees(isLowPower ? 16 : 28);
 
   world.add(createTerrainWire(), createPebblePath(), particleField, grassField, treeGroup);
@@ -483,6 +535,23 @@ const render = () => {
 
   const elapsed = performance.now() * 0.001;
   if (particleField) particleField.rotation.y += isLowPower ? 0.00018 : 0.00035;
+  if (grassField && grassRoots && grassTips && grassSeeds) {
+    const positions = grassField.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const array = positions.array as Float32Array;
+    const tipStep = isLowPower ? 3 : 2;
+    for (let i = 0; i < grassSeeds.length; i += 1) {
+      if (isLowPower && i % tipStep !== frameTick % tipStep) continue;
+      const r = i * 3;
+      const o = i * 6;
+      const seed = grassSeeds[i];
+      const swayX = Math.sin(elapsed * 1.8 + seed) * 0.03;
+      const swayZ = Math.cos(elapsed * 1.45 + seed * 1.2) * 0.03;
+      array[o + 3] = grassTips[r] + swayX;
+      array[o + 4] = grassTips[r + 1];
+      array[o + 5] = grassTips[r + 2] + swayZ;
+    }
+    positions.needsUpdate = true;
+  }
   parallaxX = THREE.MathUtils.lerp(parallaxX, targetParallaxX, 0.06);
   parallaxY = THREE.MathUtils.lerp(parallaxY, targetParallaxY, 0.06);
   if (!isLowPower || frameTick % 2 === 0) leafInstances.forEach((leaf) => {
@@ -581,6 +650,9 @@ onBeforeUnmount(() => {
   particleField = null;
   grassField = null;
   treeGroup = null;
+  grassRoots = null;
+  grassTips = null;
+  grassSeeds = null;
   leafInstances.length = 0;
   lastRenderAt = 0;
   frameTick = 0;
