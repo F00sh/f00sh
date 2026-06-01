@@ -1,6 +1,6 @@
 ﻿<template>
-  <section class="relative min-h-screen overflow-hidden">
-    <div class="pointer-events-none fixed inset-0 z-0">
+  <section class="relative min-h-screen min-h-[100svh] min-h-[100dvh] overflow-hidden">
+    <div class="pointer-events-none absolute inset-0 z-0 min-h-[100svh] min-h-[100dvh]">
       <EchoSphereScene />
     </div>
     <div class="relative z-10 mx-auto w-[min(94%,76rem)] py-16">
