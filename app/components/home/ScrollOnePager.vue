@@ -112,7 +112,16 @@ let treeGroup: THREE.Group | null = null;
 const leafInstances: LeafInstance[] = [];
 let frameId = 0;
 let running = true;
+let isLowPower = false;
+let dprCap = 1.5;
+let targetFrameMs = 16;
+let lastRenderAt = 0;
+let frameTick = 0;
 const lookTarget = new THREE.Vector3(path[0].look.x, path[0].look.y, path[0].look.z);
+let parallaxX = 0;
+let parallaxY = 0;
+let targetParallaxX = 0;
+let targetParallaxY = 0;
 
 const terrainHeight = (x: number, z: number) => -2.3 + Math.sin(z * 0.12 + x * 0.08) * 0.38 + Math.cos(z * 0.07) * 0.22;
 
@@ -146,8 +155,7 @@ const createTerrainWire = () => {
   return new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x79f3c9, transparent: true, opacity: 0.34 }));
 };
 
-const createParticles = () => {
-  const count = 1200;
+const createParticles = (count: number) => {
   const positions = new Float32Array(count * 3);
   for (let i = 0; i < count; i += 1) {
     const o = i * 3;
@@ -160,8 +168,7 @@ const createParticles = () => {
   return new THREE.Points(geometry, new THREE.PointsMaterial({ color: 0xbaff70, size: 0.04, transparent: true, opacity: 0.5, depthWrite: false }));
 };
 
-const createGrass = () => {
-  const count = 3500;
+const createGrass = (count: number) => {
   const positions = new Float32Array(count * 6);
   for (let i = 0; i < count; i += 1) {
     const o = i * 6;
@@ -181,7 +188,7 @@ const createGrass = () => {
   return new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0xc8ff8e, transparent: true, opacity: 0.35 }));
 };
 
-const createTrees = () => {
+const createTrees = (treeCount: number) => {
   const trunkMaterial = new THREE.LineBasicMaterial({ color: 0x80f0cf, transparent: true, opacity: 0.58 });
   const branchMaterial = new THREE.LineBasicMaterial({ color: 0x9cf7d8, transparent: true, opacity: 0.52 });
   const leafMaterial = new THREE.MeshBasicMaterial({
@@ -261,7 +268,6 @@ const createTrees = () => {
   };
 
   const group = new THREE.Group();
-  const treeCount = 28;
   for (let i = 0; i < treeCount; i += 1) {
     const x = THREE.MathUtils.randFloatSpread(26);
     const z = THREE.MathUtils.randFloat(-66, -2);
@@ -304,9 +310,19 @@ const createPathLine = () => {
 
 const setupScene = () => {
   if (!stage.value) return;
-  renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
+  const isMobile = window.matchMedia('(max-width: 900px)').matches;
+  const isReduced = prefersReducedMotion.value;
+  isLowPower = isMobile || isReduced;
+  dprCap = isLowPower ? 1 : 1.5;
+  targetFrameMs = isLowPower ? 1000 / 36 : 1000 / 60;
+
+  renderer = new THREE.WebGLRenderer({
+    alpha: true,
+    antialias: !isLowPower,
+    powerPreference: 'high-performance',
+  });
   renderer.setClearColor(0x040705, 0);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, dprCap));
   stage.value.appendChild(renderer.domElement);
 
   scene = new THREE.Scene();
@@ -320,9 +336,9 @@ const setupScene = () => {
   scene.add(ambient, key);
 
   world = new THREE.Group();
-  particleField = createParticles();
-  grassField = createGrass();
-  treeGroup = createTrees();
+  particleField = createParticles(isLowPower ? 520 : 1200);
+  grassField = createGrass(isLowPower ? 1400 : 3500);
+  treeGroup = createTrees(isLowPower ? 16 : 28);
 
   world.add(createTerrainWire(), createPathLine(), particleField, grassField, treeGroup);
   path.forEach((p, i) => world?.add(createLandmark(p, i)));
@@ -336,21 +352,51 @@ const resize = () => {
   camera.aspect = w / Math.max(h, 1);
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, dprCap));
+};
+
+const onPointerMove = (event: PointerEvent) => {
+  const nx = event.clientX / Math.max(window.innerWidth, 1);
+  const ny = event.clientY / Math.max(window.innerHeight, 1);
+  targetParallaxX = (nx * 2 - 1) * 0.9;
+  targetParallaxY = (ny * 2 - 1) * 0.6;
+};
+
+const onDeviceOrientation = (event: DeviceOrientationEvent) => {
+  if (event.beta == null || event.gamma == null) return;
+  const clampedGamma = THREE.MathUtils.clamp(event.gamma, -35, 35);
+  const clampedBeta = THREE.MathUtils.clamp(event.beta - 45, -35, 35);
+  targetParallaxX = THREE.MathUtils.mapLinear(clampedGamma, -35, 35, -0.95, 0.95);
+  targetParallaxY = THREE.MathUtils.mapLinear(clampedBeta, -35, 35, -0.7, 0.7);
 };
 
 const render = () => {
   if (!renderer || !scene || !camera) return;
   if (!running) return;
+  const now = performance.now();
+  if (lastRenderAt !== 0 && now - lastRenderAt < targetFrameMs) {
+    frameId = requestAnimationFrame(render);
+    return;
+  }
+  lastRenderAt = now;
+  frameTick += 1;
+
   const elapsed = performance.now() * 0.001;
-  if (particleField) particleField.rotation.y += 0.00035;
-  leafInstances.forEach((leaf) => {
+  if (particleField) particleField.rotation.y += isLowPower ? 0.00018 : 0.00035;
+  parallaxX = THREE.MathUtils.lerp(parallaxX, targetParallaxX, 0.06);
+  parallaxY = THREE.MathUtils.lerp(parallaxY, targetParallaxY, 0.06);
+  if (!isLowPower || frameTick % 2 === 0) leafInstances.forEach((leaf) => {
     const sway = Math.sin(elapsed * 1.9 + leaf.seed) * leaf.amplitude;
     leaf.mesh.position.x = leaf.basePosition.x + sway;
     leaf.mesh.position.y = leaf.basePosition.y + Math.cos(elapsed * 1.4 + leaf.seed * 1.3) * leaf.amplitude * 0.45;
     leaf.mesh.position.z = leaf.basePosition.z + Math.sin(elapsed * 1.2 + leaf.seed * 0.8) * leaf.amplitude * 0.6;
     leaf.mesh.rotation.z = leaf.baseRotation.z + sway * 5.5;
   });
-  camera.lookAt(lookTarget);
+  camera.lookAt(
+    lookTarget.x + parallaxX,
+    lookTarget.y - parallaxY,
+    lookTarget.z,
+  );
   renderer.render(scene, camera);
   frameId = requestAnimationFrame(render);
 };
@@ -398,12 +444,16 @@ onMounted(async () => {
   render();
   await setupScroll();
   window.addEventListener('resize', resize);
+  window.addEventListener('pointermove', onPointerMove, { passive: true });
+  window.addEventListener('deviceorientation', onDeviceOrientation, true);
   document.addEventListener('visibilitychange', onVisibility);
 });
 
 onBeforeUnmount(() => {
   stopRender();
   window.removeEventListener('resize', resize);
+  window.removeEventListener('pointermove', onPointerMove);
+  window.removeEventListener('deviceorientation', onDeviceOrientation, true);
   document.removeEventListener('visibilitychange', onVisibility);
 
   world?.traverse((node) => {
@@ -424,6 +474,8 @@ onBeforeUnmount(() => {
   grassField = null;
   treeGroup = null;
   leafInstances.length = 0;
+  lastRenderAt = 0;
+  frameTick = 0;
 });
 </script>
 
