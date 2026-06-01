@@ -12,19 +12,6 @@
       <div class="flex items-center gap-3">
         <button
           type="button"
-          class="grid h-9 w-9 place-items-center rounded-full bg-black/40 text-lime-300"
-          :aria-label="isMuted ? 'Sound off' : 'Sound on'"
-          @click="toggleMute"
-        >
-          <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="9" />
-            <path d="M9 8.5L16 12L9 15.5V8.5Z" />
-            <path v-if="isMuted" d="M6 18L18 6" />
-          </svg>
-        </button>
-
-        <button
-          type="button"
           class="grid h-9 w-9 place-items-center rounded-full bg-black/40 text-neutral-100 md:hidden"
           aria-label="Toggle menu"
           @click="mobileOpen = !mobileOpen"
@@ -49,7 +36,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useBackgroundAudio } from '~/composables/useBackgroundAudio';
 
 const mobileOpen = ref(false);
 const links = [
@@ -58,6 +44,4 @@ const links = [
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },
 ];
-
-const { isMuted, toggleMute } = useBackgroundAudio();
 </script>

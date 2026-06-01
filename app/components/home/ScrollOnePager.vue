@@ -64,7 +64,6 @@
 <script setup lang="ts">
 import * as THREE from 'three';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { useBackgroundAudio } from '~/composables/useBackgroundAudio';
 import { useGsap } from '~/composables/useGsap';
 import { usePrefersReducedMotion } from '~/composables/usePrefersReducedMotion';
 
@@ -109,7 +108,6 @@ const path: StopPoint[] = [
 const root = ref<HTMLElement | null>(null);
 const stage = ref<HTMLElement | null>(null);
 const showMotionPrompt = ref(false);
-const { init: initBackgroundAudio } = useBackgroundAudio();
 const { loadGsap, trackAnimation, addCleanup } = useGsap();
 const { prefersReducedMotion } = usePrefersReducedMotion();
 
@@ -610,9 +608,6 @@ const onVisibility = () => {
 };
 
 onMounted(async () => {
-  const musicUrl = new URL('../../assets/music/bg-music-2.mp3', import.meta.url).href;
-  await initBackgroundAudio(musicUrl, 0.5);
-
   setupScene();
   resize();
   render();
