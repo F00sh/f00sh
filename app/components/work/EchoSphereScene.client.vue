@@ -28,6 +28,7 @@ let audioContext: AudioContext | null = null;
 let micStream: MediaStream | null = null;
 let particleBaseDirs: Float32Array | null = null;
 let micRetryBound = false;
+let gestureUnlockBound = false;
 const shaderUniforms = {
   uTime: { value: 0 },
   uAudioIntensity: { value: 0 },
@@ -36,6 +37,8 @@ const shaderUniforms = {
 
 const mediaSourceMap = new WeakMap<HTMLMediaElement, MediaElementAudioSourceNode>();
 const sphereRadius = 2.2;
+const getAudioContextCtor = () =>
+  (window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext);
 
 const hash3 = (x: number, y: number, z: number) => {
   let px = ((x * 0.3183099) + 0.1) % 1;
@@ -95,7 +98,9 @@ const fbm = (x: number, y: number, z: number) => {
 const setupAudioAnalyser = async () => {
   if (!audio.value) return;
   try {
-    audioContext = new AudioContext();
+    const AudioCtx = getAudioContextCtor();
+    if (!AudioCtx) return;
+    if (!audioContext || audioContext.state === 'closed') audioContext = new AudioCtx();
     if (audioContext.state === 'suspended') {
       await audioContext.resume();
     }
@@ -129,7 +134,9 @@ const getAudioEnergy = () => {
 const setupMicrophoneAnalyser = async () => {
   if (!audioContext) {
     try {
-      audioContext = new AudioContext();
+      const AudioCtx = getAudioContextCtor();
+      if (!AudioCtx) return;
+      audioContext = new AudioCtx();
       if (audioContext.state === 'suspended') {
         await audioContext.resume();
       }
@@ -162,11 +169,18 @@ const setupMicrophoneAnalyser = async () => {
 };
 
 const trySetupMicFromGesture = async () => {
+  if (audioContext?.state === 'suspended') {
+    try { await audioContext.resume(); } catch {}
+  }
+  await setupAudioAnalyser();
   if (micAnalyser) return;
   await setupMicrophoneAnalyser();
   if (micAnalyser && micRetryBound) {
     window.removeEventListener('pointerdown', trySetupMicFromGesture);
+    window.removeEventListener('touchend', trySetupMicFromGesture);
+    window.removeEventListener('click', trySetupMicFromGesture);
     micRetryBound = false;
+    gestureUnlockBound = false;
   }
 };
 
@@ -277,6 +291,7 @@ onMounted(async () => {
     transparent: true,
     wireframe: true,
     vertexShader: `
+      precision highp float;
       uniform float uTime;
       uniform float uAudioIntensity;
       uniform float uAudioDisplacementBoost;
@@ -335,6 +350,7 @@ onMounted(async () => {
       }
     `,
     fragmentShader: `
+      precision mediump float;
       varying float vDispSigned;
       void main() {
         gl_FragColor = vec4(vec3(0.0), 0.95);
@@ -356,6 +372,7 @@ onMounted(async () => {
     transparent: true,
     depthWrite: false,
     vertexShader: `
+      precision highp float;
       uniform float uTime;
       uniform float uAudioIntensity;
       uniform float uAudioDisplacementBoost;
@@ -412,6 +429,7 @@ onMounted(async () => {
       }
     `,
     fragmentShader: `
+      precision mediump float;
       void main() {
         gl_FragColor = vec4(vec3(0.18), 0.4);
       }
@@ -456,9 +474,12 @@ onMounted(async () => {
 
   await setupAudioAnalyser();
   await setupMicrophoneAnalyser();
-  if (!micAnalyser && !micRetryBound) {
+  if ((!micAnalyser || audioContext?.state === 'suspended') && !micRetryBound) {
     micRetryBound = true;
     window.addEventListener('pointerdown', trySetupMicFromGesture, { passive: true });
+    window.addEventListener('touchend', trySetupMicFromGesture, { passive: true });
+    window.addEventListener('click', trySetupMicFromGesture, { passive: true });
+    gestureUnlockBound = true;
   }
   resize();
   window.addEventListener('resize', resize);
@@ -469,6 +490,8 @@ onBeforeUnmount(() => {
   cancelAnimationFrame(frame);
   window.removeEventListener('resize', resize);
   window.removeEventListener('pointerdown', trySetupMicFromGesture);
+  window.removeEventListener('touchend', trySetupMicFromGesture);
+  window.removeEventListener('click', trySetupMicFromGesture);
 
   mesh?.geometry.dispose();
   mesh?.material.dispose();
@@ -501,5 +524,6 @@ onBeforeUnmount(() => {
   micStream = null;
   particleBaseDirs = null;
   micRetryBound = false;
+  gestureUnlockBound = false;
 });
 </script>
