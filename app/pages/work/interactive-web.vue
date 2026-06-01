@@ -42,6 +42,12 @@ const projects = [
     title: 'Echo Sphere',
     text: 'Audio-reactive wireframe ico sphere with realtime deformation, particles and mic input.',
     link: '/work/echo-sphere'
+  },
+  {
+    category: 'Interactive 3D Game',
+    title: 'Kinetic Sphere',
+    text: 'Click-driven invisible wall collider pushes a sphere through endless procedural wireframe terrain.',
+    link: '/work/kinetic-sphere'
   }
 ];
 
