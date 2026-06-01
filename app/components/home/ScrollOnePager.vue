@@ -534,8 +534,22 @@ const onDeviceOrientation = (event: DeviceOrientationEvent) => {
   targetParallaxY = THREE.MathUtils.mapLinear(clampedBeta, -35, 35, -0.7, 0.7);
 };
 
+const onDeviceMotion = (event: DeviceMotionEvent) => {
+  const rate = event.rotationRate;
+  if (!rate) return;
+  const gamma = typeof rate.gamma === 'number' ? rate.gamma : 0;
+  const beta = typeof rate.beta === 'number' ? rate.beta : 0;
+  const clampedGamma = THREE.MathUtils.clamp(gamma, -35, 35);
+  const clampedBeta = THREE.MathUtils.clamp(beta, -35, 35);
+  targetParallaxX = THREE.MathUtils.mapLinear(clampedGamma, -35, 35, -0.9, 0.9);
+  targetParallaxY = THREE.MathUtils.mapLinear(clampedBeta, -35, 35, -0.65, 0.65);
+};
+
 const enableMotion = async () => {
   const orientation = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
+    requestPermission?: () => Promise<'granted' | 'denied'>;
+  };
+  const motion = DeviceMotionEvent as typeof DeviceMotionEvent & {
     requestPermission?: () => Promise<'granted' | 'denied'>;
   };
   try {
@@ -546,7 +560,12 @@ const enableMotion = async () => {
         return;
       }
     }
+    if (typeof motion.requestPermission === 'function') {
+      await motion.requestPermission();
+    }
     window.addEventListener('deviceorientation', onDeviceOrientation, true);
+    window.addEventListener('deviceorientationabsolute', onDeviceOrientation as EventListener, true);
+    window.addEventListener('devicemotion', onDeviceMotion, true);
     gyroPermission.value = 'granted';
     showMotionPrompt.value = false;
   } catch {
@@ -701,6 +720,8 @@ onMounted(async () => {
     else if (gyroPermission.value !== 'denied') showMotionPrompt.value = true;
   } else {
     window.addEventListener('deviceorientation', onDeviceOrientation, true);
+    window.addEventListener('deviceorientationabsolute', onDeviceOrientation as EventListener, true);
+    window.addEventListener('devicemotion', onDeviceMotion, true);
     gyroPermission.value = 'granted';
   }
   document.addEventListener('visibilitychange', onVisibility);
@@ -711,6 +732,8 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', resize);
   window.removeEventListener('pointermove', onPointerMove);
   window.removeEventListener('deviceorientation', onDeviceOrientation, true);
+  window.removeEventListener('deviceorientationabsolute', onDeviceOrientation as EventListener, true);
+  window.removeEventListener('devicemotion', onDeviceMotion, true);
   document.removeEventListener('visibilitychange', onVisibility);
 
   world?.traverse((node) => {

@@ -27,6 +27,7 @@ let micFreqData: Uint8Array | null = null;
 let audioContext: AudioContext | null = null;
 let micStream: MediaStream | null = null;
 let particleBaseDirs: Float32Array | null = null;
+let micRetryBound = false;
 const shaderUniforms = {
   uTime: { value: 0 },
   uAudioIntensity: { value: 0 },
@@ -126,7 +127,16 @@ const getAudioEnergy = () => {
 };
 
 const setupMicrophoneAnalyser = async () => {
-  if (!audioContext) return;
+  if (!audioContext) {
+    try {
+      audioContext = new AudioContext();
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+    } catch {
+      return;
+    }
+  }
   try {
     micStream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -148,6 +158,15 @@ const setupMicrophoneAnalyser = async () => {
     micFreqData = null;
     micStream = null;
     micPermission.value = 'denied';
+  }
+};
+
+const trySetupMicFromGesture = async () => {
+  if (micAnalyser) return;
+  await setupMicrophoneAnalyser();
+  if (micAnalyser && micRetryBound) {
+    window.removeEventListener('pointerdown', trySetupMicFromGesture);
+    micRetryBound = false;
   }
 };
 
@@ -436,8 +455,10 @@ onMounted(async () => {
   scene.add(particleSystem);
 
   await setupAudioAnalyser();
-  if (micPermission.value !== 'denied') {
-    await setupMicrophoneAnalyser();
+  await setupMicrophoneAnalyser();
+  if (!micAnalyser && !micRetryBound) {
+    micRetryBound = true;
+    window.addEventListener('pointerdown', trySetupMicFromGesture, { passive: true });
   }
   resize();
   window.addEventListener('resize', resize);
@@ -447,6 +468,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   cancelAnimationFrame(frame);
   window.removeEventListener('resize', resize);
+  window.removeEventListener('pointerdown', trySetupMicFromGesture);
 
   mesh?.geometry.dispose();
   mesh?.material.dispose();
@@ -478,5 +500,6 @@ onBeforeUnmount(() => {
   audioContext = null;
   micStream = null;
   particleBaseDirs = null;
+  micRetryBound = false;
 });
 </script>
