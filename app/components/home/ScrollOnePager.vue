@@ -166,6 +166,9 @@ let targetParallaxX = 0;
 let targetParallaxY = 0;
 let lastMotionUpdateAt = 0;
 let motionSource: 'none' | 'orientation' | 'motion' = 'none';
+let gyroCalibrated = false;
+let gyroBaseBeta = 0;
+let gyroBaseGamma = 0;
 let smoothScrollEnabled = false;
 let smoothScrollCurrent = 0;
 let smoothScrollTarget = 0;
@@ -539,14 +542,21 @@ const onDeviceOrientation = (event: DeviceOrientationEvent) => {
   if (event.beta == null || event.gamma == null) return;
   motionSource = 'orientation';
   lastMotionUpdateAt = performance.now();
-  const clampedGamma = THREE.MathUtils.clamp(event.gamma, -35, 35);
-  const clampedBeta = THREE.MathUtils.clamp(event.beta - 45, -35, 35);
+  if (!gyroCalibrated) {
+    gyroBaseBeta = event.beta;
+    gyroBaseGamma = event.gamma;
+    gyroCalibrated = true;
+  }
+  const relGamma = event.gamma - gyroBaseGamma;
+  const relBeta = event.beta - gyroBaseBeta;
+  const clampedGamma = THREE.MathUtils.clamp(relGamma, -35, 35);
+  const clampedBeta = THREE.MathUtils.clamp(relBeta, -35, 35);
   targetParallaxX = THREE.MathUtils.mapLinear(clampedGamma, -35, 35, -0.95, 0.95);
   targetParallaxY = THREE.MathUtils.mapLinear(clampedBeta, -35, 35, -0.7, 0.7);
 };
 
 const onDeviceMotion = (event: DeviceMotionEvent) => {
-  if (motionSource === 'orientation' && performance.now() - lastMotionUpdateAt < 140) return;
+  if (motionSource === 'orientation' && performance.now() - lastMotionUpdateAt < 260) return;
   const rate = event.rotationRate;
   if (!rate) return;
   motionSource = 'motion';
@@ -577,6 +587,7 @@ const enableMotion = async () => {
     if (typeof motion.requestPermission === 'function') {
       await motion.requestPermission();
     }
+    gyroCalibrated = false;
     window.addEventListener('deviceorientation', onDeviceOrientation, true);
     window.addEventListener('deviceorientationabsolute', onDeviceOrientation as EventListener, true);
     window.addEventListener('devicemotion', onDeviceMotion, true);
@@ -770,6 +781,7 @@ onMounted(async () => {
     if (gyroPermission.value === 'granted') await enableMotion();
     else if (gyroPermission.value !== 'denied') showMotionPrompt.value = true;
   } else {
+    gyroCalibrated = false;
     window.addEventListener('deviceorientation', onDeviceOrientation, true);
     window.addEventListener('deviceorientationabsolute', onDeviceOrientation as EventListener, true);
     window.addEventListener('devicemotion', onDeviceMotion, true);
@@ -824,6 +836,9 @@ onBeforeUnmount(() => {
   frameTick = 0;
   lastMotionUpdateAt = 0;
   motionSource = 'none';
+  gyroCalibrated = false;
+  gyroBaseBeta = 0;
+  gyroBaseGamma = 0;
   isCoarsePointer = false;
   smoothScrollEnabled = false;
   smoothScrollCurrent = 0;
