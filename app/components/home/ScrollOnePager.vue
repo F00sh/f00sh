@@ -10,6 +10,25 @@
     >
       Enable Motion
     </button>
+    <div v-if="isCoarsePointer" class="fixed bottom-4 right-4 z-30 bg-black/60 p-3 text-[10px] uppercase tracking-[0.14em] text-neutral-200">
+      <div class="mb-2 flex items-center gap-2">
+        <button type="button" class="rounded-full bg-lime-300 px-3 py-1 font-bold text-neutral-950" @click="recalibrateGyro">Recalibrate</button>
+      </div>
+      <div class="mb-2 flex items-center gap-3">
+        <label class="flex items-center gap-1">
+          <input v-model="invertX" type="checkbox">
+          Inv X
+        </label>
+        <label class="flex items-center gap-1">
+          <input v-model="invertY" type="checkbox">
+          Inv Y
+        </label>
+      </div>
+      <label class="flex items-center gap-2">
+        Sens
+        <input v-model.number="gyroSensitivity" type="range" min="0.5" max="2" step="0.05" class="w-24">
+      </label>
+    </div>
     <div v-if="showPermissionPrompt" class="fixed inset-0 z-40 grid place-items-center bg-black/70 px-4">
       <div class="w-full max-w-lg bg-neutral-950/95 p-6 text-neutral-100">
         <p class="font-ibm-plex-mono text-xs uppercase tracking-[0.22em] text-lime-300">Permissions</p>
@@ -41,7 +60,7 @@
         v-for="(item, index) in sections"
         :id="item.id"
         :key="item.id"
-        class="scroll-panel grid min-h-screen items-center px-4 py-20 sm:px-8 lg:px-10"
+        class="scroll-panel sticky top-0 grid min-h-screen items-center px-4 py-20 sm:px-8 lg:px-10"
         :aria-labelledby="`${item.id}-title`"
         data-panel
       >
@@ -138,6 +157,9 @@ const showPermissionPrompt = ref(false);
 const { loadGsap, trackAnimation, addCleanup } = useGsap();
 const { gyroPermission, micPermission, geoPermission, onboardingAsked } = usePermissionPrefs();
 const { prefersReducedMotion } = usePrefersReducedMotion();
+const invertX = useCookie<boolean>('foosh_gyro_invert_x', { default: () => false, sameSite: 'lax', maxAge: 60 * 60 * 24 * 365 });
+const invertY = useCookie<boolean>('foosh_gyro_invert_y', { default: () => false, sameSite: 'lax', maxAge: 60 * 60 * 24 * 365 });
+const gyroSensitivity = useCookie<number>('foosh_gyro_sensitivity', { default: () => 1, sameSite: 'lax', maxAge: 60 * 60 * 24 * 365 });
 
 let renderer: THREE.WebGLRenderer | null = null;
 let scene: THREE.Scene | null = null;
@@ -173,6 +195,7 @@ let smoothScrollEnabled = false;
 let smoothScrollCurrent = 0;
 let smoothScrollTarget = 0;
 let smoothScrollInternal = false;
+let sectionSnapLock = false;
 
 const terrainHeight = (x: number, z: number) => -2.3 + Math.sin(z * 0.12 + x * 0.08) * 0.38 + Math.cos(z * 0.07) * 0.22;
 const terrainNormal = (x: number, z: number) => {
@@ -551,8 +574,11 @@ const onDeviceOrientation = (event: DeviceOrientationEvent) => {
   const relBeta = event.beta - gyroBaseBeta;
   const clampedGamma = THREE.MathUtils.clamp(relGamma, -35, 35);
   const clampedBeta = THREE.MathUtils.clamp(relBeta, -35, 35);
-  targetParallaxX = THREE.MathUtils.mapLinear(clampedGamma, -35, 35, -0.95, 0.95);
-  targetParallaxY = THREE.MathUtils.mapLinear(clampedBeta, -35, 35, -0.7, 0.7);
+  const sx = invertX.value ? -1 : 1;
+  const sy = invertY.value ? -1 : 1;
+  const sens = THREE.MathUtils.clamp(gyroSensitivity.value || 1, 0.5, 2);
+  targetParallaxX = THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(clampedGamma, -35, 35, -0.95, 0.95) * sx * sens, -1.2, 1.2);
+  targetParallaxY = THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(clampedBeta, -35, 35, -0.7, 0.7) * sy * sens, -1, 1);
 };
 
 const onDeviceMotion = (event: DeviceMotionEvent) => {
@@ -565,8 +591,15 @@ const onDeviceMotion = (event: DeviceMotionEvent) => {
   const beta = typeof rate.beta === 'number' ? rate.beta : 0;
   const clampedGamma = THREE.MathUtils.clamp(gamma, -35, 35);
   const clampedBeta = THREE.MathUtils.clamp(beta, -35, 35);
-  targetParallaxX = THREE.MathUtils.mapLinear(clampedGamma, -35, 35, -0.9, 0.9);
-  targetParallaxY = THREE.MathUtils.mapLinear(clampedBeta, -35, 35, -0.65, 0.65);
+  const sx = invertX.value ? -1 : 1;
+  const sy = invertY.value ? -1 : 1;
+  const sens = THREE.MathUtils.clamp(gyroSensitivity.value || 1, 0.5, 2);
+  targetParallaxX = THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(clampedGamma, -35, 35, -0.9, 0.9) * sx * sens, -1.2, 1.2);
+  targetParallaxY = THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(clampedBeta, -35, 35, -0.65, 0.65) * sy * sens, -1, 1);
+};
+
+const recalibrateGyro = () => {
+  gyroCalibrated = false;
 };
 
 const enableMotion = async () => {
@@ -747,14 +780,23 @@ const smoothScrollStep = () => {
 const onWheelSmooth = (event: WheelEvent) => {
   if (!smoothScrollEnabled) return;
   event.preventDefault();
-  const max = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0);
-  smoothScrollTarget = THREE.MathUtils.clamp(smoothScrollTarget + event.deltaY, 0, max);
+  if (sectionSnapLock) return;
+  sectionSnapLock = true;
+  const h = Math.max(window.innerHeight, 1);
+  const maxIndex = Math.max(sections.length - 1, 0);
+  const currentIndex = Math.round((window.scrollY || 0) / h);
+  const direction = event.deltaY > 0 ? 1 : -1;
+  const nextIndex = THREE.MathUtils.clamp(currentIndex + direction, 0, maxIndex);
+  smoothScrollTarget = nextIndex * h;
   if (!smoothScrollFrame) {
     smoothScrollFrame = requestAnimationFrame(() => {
       smoothScrollFrame = 0;
       smoothScrollStep();
     });
   }
+  window.setTimeout(() => {
+    sectionSnapLock = false;
+  }, 420);
 };
 
 const onNativeScroll = () => {
@@ -844,6 +886,7 @@ onBeforeUnmount(() => {
   smoothScrollCurrent = 0;
   smoothScrollTarget = 0;
   smoothScrollInternal = false;
+  sectionSnapLock = false;
   smoothScrollFrame = 0;
 });
 </script>
