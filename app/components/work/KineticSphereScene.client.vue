@@ -12,11 +12,17 @@ const mount = ref<HTMLElement | null>(null);
 let renderer: THREE.WebGLRenderer | null = null;
 let scene: THREE.Scene | null = null;
 let camera: THREE.PerspectiveCamera | null = null;
+let postScene: THREE.Scene | null = null;
+let postCamera: THREE.OrthographicCamera | null = null;
+let postQuad: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial> | null = null;
+let postTarget: THREE.WebGLRenderTarget | null = null;
+let postPrevTarget: THREE.WebGLRenderTarget | null = null;
 let frameId = 0;
 let clock: THREE.Clock | null = null;
-const cameraAnchor = new THREE.Vector3(0, 5.2, 11.5);
+const cameraAnchor = new THREE.Vector3(0, 5.2, 10.7);
 const cameraVelocity = new THREE.Vector3();
 const cameraDistance = Math.sqrt(cameraAnchor.x ** 2 + cameraAnchor.y ** 2 + cameraAnchor.z ** 2);
+const cameraPitchX = -Math.PI * 0.25;
 let mouseYaw = 0;
 let targetMouseYaw = 0;
 const headbuttPulse = { value: 0 };
@@ -35,7 +41,7 @@ const sphereVelocity = new THREE.Vector3(0, 0, 0);
 const sphereRadius = 1.08;
 const gravity = -15.5;
 const airDrag = 0.998;
-const groundDrag = 0.972;
+const groundDrag = 0.982;
 const maxStepHeight = 0.62;
 const maxHorizontalSpeed = 17.5;
 const maxVerticalSpeed = 16;
@@ -132,19 +138,20 @@ const terrainHeight = (x: number, z: number) => {
   const warpX = x + (fbm2(x * 0.028 + 19.3, z * 0.028 - 4.7) - 0.5) * 22;
   const warpZ = z + (fbm2(x * 0.028 - 7.1, z * 0.028 + 12.6) - 0.5) * 22;
 
-  const megaMountains = ridged2(warpX * 0.018, warpZ * 0.018) * 12.2;
-  const mountainChains = ridged2(warpX * 0.044 + 3.2, warpZ * 0.044 - 6.8) * 6.1;
-  const broadValleys = (fbm2(warpX * 0.016 - 2.7, warpZ * 0.016 + 5.4) - 0.5) * 10.2;
+  const megaMountains = (ridged2(warpX * 0.018, warpZ * 0.018) - 0.58) * 7.2;
+  const mountainChains = (ridged2(warpX * 0.044 + 3.2, warpZ * 0.044 - 6.8) - 0.56) * 3.8;
+  const broadValleys = (fbm2(warpX * 0.016 - 2.7, warpZ * 0.016 + 5.4) - 0.5) * 5.2;
   const canyonMask = ridged2(x * 0.012 - 11.3, z * 0.012 + 8.9);
-  const canyons = Math.pow(canyonMask, 2.7) * 8.4;
-  const rough = fbm2(x * 0.3 + 2.1, z * 0.3 - 1.8) * 1.15 + fbm2(x * 0.8 - 6.3, z * 0.8 + 4.2) * 0.62;
+  const canyons = (Math.pow(canyonMask, 2.7) - 0.28) * 4.8;
+  const rough = fbm2(x * 0.3 + 2.1, z * 0.3 - 1.8) * 0.62 + fbm2(x * 0.8 - 6.3, z * 0.8 + 4.2) * 0.28;
 
-  const wildBase = terrace(megaMountains * 0.42 + mountainChains * 0.35 - canyons * 0.28, 8, 2.25) * 6.2;
-  const mildBase = (fbm2(warpX * 0.03 + 1.7, warpZ * 0.03 - 2.9) - 0.5) * 7.2 + broadValleys * 0.65;
+  const wildBase = terrace(megaMountains * 0.42 + mountainChains * 0.35 - canyons * 0.28, 7, 1.9) * 3.9;
+  const mildBase = (fbm2(warpX * 0.03 + 1.7, warpZ * 0.03 - 2.9) - 0.5) * 4.3 + broadValleys * 0.52;
   const blendMask = THREE.MathUtils.clamp(fbm2(x * 0.01 + 17.4, z * 0.01 - 9.6), 0, 1);
   const mixedBase = mix(mildBase, wildBase, blendMask * 0.7 + 0.15);
-  const valleyFloor = broadValleys - Math.abs(broadValleys) * 0.42;
-  return -7.2 + mixedBase + valleyFloor + rough;
+  const valleyFloor = broadValleys * 0.38;
+  const tiltX45 = z;
+  return -4.8 + mixedBase + valleyFloor + rough + tiltX45;
 };
 
 const terrainNormal = (x: number, z: number) => {
@@ -217,8 +224,8 @@ const createChunk = (xIndex: number, zIndex: number) => {
     faceGeometry,
     new THREE.MeshBasicMaterial({
       color: 0x000000,
-      transparent: true,
-      opacity: 0.5,
+      transparent: false,
+      opacity: 1,
       side: THREE.DoubleSide,
       depthWrite: false,
     }),
@@ -535,9 +542,9 @@ const updateSpherePhysics = (dt: number) => {
     const normal = terrainNormal(spherePos.x, spherePos.z);
     const vn = sphereVelocity.dot(normal);
     if (vn < 0) {
-      const restitution = 0.9;
+      const restitution = 1.03;
       sphereVelocity.addScaledVector(normal, -(1 + restitution) * vn);
-      const tangentDamping = 0.99;
+      const tangentDamping = 0.995;
       const tangent = sphereVelocity.clone().sub(normal.clone().multiplyScalar(sphereVelocity.dot(normal)));
       sphereVelocity.copy(tangent.multiplyScalar(tangentDamping).add(normal.multiplyScalar(sphereVelocity.dot(normal))));
     }
@@ -596,6 +603,11 @@ const resize = () => {
   camera.aspect = w / Math.max(h, 1);
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
+  postTarget?.setSize(w, h);
+  postPrevTarget?.setSize(w, h);
+  if (postQuad) {
+    postQuad.material.uniforms.uResolution.value.set(w, h);
+  }
   const dpr = window.matchMedia('(max-width: 900px)').matches ? 1 : 1.5;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, dpr));
 };
@@ -633,11 +645,10 @@ const animate = () => {
   }
 
   mouseYaw = THREE.MathUtils.lerp(mouseYaw, targetMouseYaw, 0.08);
-  const anchorXZ = new THREE.Vector3(cameraAnchor.x, 0, cameraAnchor.z)
-    .normalize()
-    .multiplyScalar(Math.hypot(cameraAnchor.x, cameraAnchor.z))
+  const dynamicAnchor = cameraAnchor
+    .clone()
+    .applyAxisAngle(new THREE.Vector3(1, 0, 0), cameraPitchX)
     .applyAxisAngle(new THREE.Vector3(0, 1, 0), mouseYaw);
-  const dynamicAnchor = new THREE.Vector3(anchorXZ.x, cameraAnchor.y, anchorXZ.z);
   const headbuttDistance = cameraDistance - headbuttPulse.value * 3.0;
   const desired = spherePos.clone().add(dynamicAnchor.clone().normalize().multiplyScalar(headbuttDistance));
   const toTarget = desired.sub(camera.position);
@@ -650,7 +661,22 @@ const animate = () => {
   camera.position.copy(spherePos.clone().add(radial));
   camera.lookAt(spherePos);
 
-  renderer.render(scene, camera);
+  if (postTarget && postScene && postCamera && postQuad) {
+    renderer.setRenderTarget(postTarget);
+    renderer.render(scene, camera);
+    renderer.setRenderTarget(null);
+    postQuad.material.uniforms.uScene.value = postTarget.texture;
+    postQuad.material.uniforms.uPrevScene.value = postPrevTarget?.texture ?? postTarget.texture;
+    postQuad.material.uniforms.uMotionBlur.value = THREE.MathUtils.clamp(headbuttPulse.value * 0.42, 0, 0.42);
+    renderer.render(postScene, postCamera);
+    if (postPrevTarget) {
+      const tmp = postPrevTarget;
+      postPrevTarget = postTarget;
+      postTarget = tmp;
+    }
+  } else {
+    renderer.render(scene, camera);
+  }
   frameId = requestAnimationFrame(animate);
 };
 
@@ -666,6 +692,59 @@ onMounted(() => {
   camera = new THREE.PerspectiveCamera(46, 1, 0.1, 400);
   camera.position.set(0, 6, 11);
   clock = new THREE.Clock();
+  postScene = new THREE.Scene();
+  postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  postTarget = new THREE.WebGLRenderTarget(1, 1, {
+    depthBuffer: true,
+    stencilBuffer: false,
+  });
+  postPrevTarget = new THREE.WebGLRenderTarget(1, 1, {
+    depthBuffer: true,
+    stencilBuffer: false,
+  });
+  const postMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      uScene: { value: null },
+      uPrevScene: { value: null },
+      uResolution: { value: new THREE.Vector2(1, 1) },
+      uStrength: { value: 0.11 },
+      uMotionBlur: { value: 0 },
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec2 vUv;
+      uniform sampler2D uScene;
+      uniform sampler2D uPrevScene;
+      uniform vec2 uResolution;
+      uniform float uStrength;
+      uniform float uMotionBlur;
+      void main() {
+        vec2 uv = vUv;
+        vec2 p = uv * 2.0 - 1.0;
+        p.x *= uResolution.x / max(uResolution.y, 1.0);
+        float r = length(p);
+        float k = 1.0 + uStrength * r * r;
+        vec2 warped = p / k;
+        warped.x /= uResolution.x / max(uResolution.y, 1.0);
+        warped = warped * 0.5 + 0.5;
+        if (warped.x < 0.0 || warped.x > 1.0 || warped.y < 0.0 || warped.y > 1.0) {
+          gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        } else {
+          vec4 curr = texture2D(uScene, warped);
+          vec4 prev = texture2D(uPrevScene, warped);
+          gl_FragColor = mix(curr, prev, uMotionBlur);
+        }
+      }
+    `,
+  });
+  postQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMaterial);
+  postScene.add(postQuad);
 
   const ambient = new THREE.AmbientLight(0xffffff, 0.45);
   const key = new THREE.DirectionalLight(0xc8ff8d, 0.6);
@@ -775,6 +854,15 @@ onBeforeUnmount(() => {
   moonWire?.geometry.dispose();
   moonWire?.material.dispose();
   moonWire = null;
+  postQuad?.geometry.dispose();
+  postQuad?.material.dispose();
+  postTarget?.dispose();
+  postPrevTarget?.dispose();
+  postQuad = null;
+  postTarget = null;
+  postPrevTarget = null;
+  postScene = null;
+  postCamera = null;
 
   sphere?.geometry.dispose();
   sphere?.material.dispose();
