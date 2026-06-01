@@ -133,6 +133,16 @@ let targetParallaxX = 0;
 let targetParallaxY = 0;
 
 const terrainHeight = (x: number, z: number) => -2.3 + Math.sin(z * 0.12 + x * 0.08) * 0.38 + Math.cos(z * 0.07) * 0.22;
+const terrainNormal = (x: number, z: number) => {
+  const d = 0.16;
+  const hL = terrainHeight(x - d, z);
+  const hR = terrainHeight(x + d, z);
+  const hD = terrainHeight(x, z - d);
+  const hU = terrainHeight(x, z + d);
+  const dx = (hR - hL) / (2 * d);
+  const dz = (hU - hD) / (2 * d);
+  return new THREE.Vector3(-dx, 1, -dz).normalize();
+};
 
 const createTerrainWire = () => {
   const segments: Array<[THREE.Vector3, THREE.Vector3]> = [];
@@ -311,10 +321,75 @@ const createLandmark = (point: StopPoint, index: number) => {
   return group;
 };
 
-const createPathLine = () => {
-  const pts = path.map((p) => new THREE.Vector3(p.look.x, p.look.y + 0.12, p.look.z));
-  const geometry = new THREE.BufferGeometry().setFromPoints(pts);
-  return new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0xd9ff66, transparent: true, opacity: 0.55 }));
+const createPebblePath = () => {
+  const group = new THREE.Group();
+  const material = new THREE.LineBasicMaterial({ color: 0xd9ff66, transparent: true, opacity: 0.5 });
+  const pebbles: Array<{ x: number; z: number; r: number }> = [];
+  const minGap = 0.03;
+
+  const canPlace = (x: number, z: number, r: number) =>
+    pebbles.every((p) => {
+      const dx = x - p.x;
+      const dz = z - p.z;
+      const minDist = p.r + r + minGap;
+      return dx * dx + dz * dz >= minDist * minDist;
+    });
+
+  const tryPlace = (x: number, z: number, radiusMin: number, radiusMax: number, attempts = 10) => {
+    for (let k = 0; k < attempts; k += 1) {
+      const r = THREE.MathUtils.randFloat(radiusMin, radiusMax);
+      const jx = x + THREE.MathUtils.randFloatSpread(0.12);
+      const jz = z + THREE.MathUtils.randFloatSpread(0.12);
+      if (canPlace(jx, jz, r)) {
+        pebbles.push({ x: jx, z: jz, r });
+        return true;
+      }
+    }
+    return false;
+  };
+
+  for (let i = 0; i < path.length - 1; i += 1) {
+    const a = path[i].look;
+    const b = path[i + 1].look;
+    const dx = b.x - a.x;
+    const dz = b.z - a.z;
+    const len = Math.max(Math.hypot(dx, dz), 0.001);
+    const nx = -dz / len;
+    const nz = dx / len;
+    const steps = 26;
+
+    for (let j = 0; j <= steps; j += 1) {
+      const t = j / steps;
+      const baseX = THREE.MathUtils.lerp(a.x, b.x, t);
+      const baseZ = THREE.MathUtils.lerp(a.z, b.z, t);
+
+      // Main route pebbles
+      tryPlace(baseX, baseZ, 0.09, 0.28, 8);
+
+      // Side scatter (both sides)
+      const sideOffsetA = THREE.MathUtils.randFloat(0.55, 1.6);
+      const sideOffsetB = THREE.MathUtils.randFloat(0.55, 1.6);
+      tryPlace(baseX + nx * sideOffsetA, baseZ + nz * sideOffsetA, 0.08, 0.24, 6);
+      tryPlace(baseX - nx * sideOffsetB, baseZ - nz * sideOffsetB, 0.08, 0.24, 6);
+    }
+  }
+
+  pebbles.forEach((pebble, index) => {
+    const radius = pebble.r;
+    const segments = 12;
+    const points: THREE.Vector3[] = [];
+    for (let i = 0; i <= segments; i += 1) {
+      const angle = (i / segments) * Math.PI * 2;
+      points.push(new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, 0));
+    }
+    const loop = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(points), material);
+    const y = terrainHeight(pebble.x, pebble.z) + 0.03 + (index % 3) * 0.004;
+    loop.position.set(pebble.x, y, pebble.z);
+    loop.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), terrainNormal(pebble.x, pebble.z));
+    group.add(loop);
+  });
+
+  return group;
 };
 
 const setupScene = () => {
@@ -349,7 +424,7 @@ const setupScene = () => {
   grassField = createGrass(isLowPower ? 1400 : 3500);
   treeGroup = createTrees(isLowPower ? 16 : 28);
 
-  world.add(createTerrainWire(), createPathLine(), particleField, grassField, treeGroup);
+  world.add(createTerrainWire(), createPebblePath(), particleField, grassField, treeGroup);
   path.forEach((p, i) => world?.add(createLandmark(p, i)));
   scene.add(world);
 };
