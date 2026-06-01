@@ -1,5 +1,5 @@
 ﻿<template>
-  <section ref="root" class="relative isolate bg-[#040705] text-neutral-50">
+  <section ref="root" class="root relative isolate bg-[#040705] text-neutral-50">
     <div ref="stage" class="pointer-events-none fixed inset-0 z-0" aria-hidden="true" />
     <div class="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_82%_14%,rgba(163,230,53,0.14),transparent_30%),linear-gradient(180deg,rgba(4,7,5,0.35),rgba(4,7,5,0.78))]" />
     <button
@@ -608,6 +608,10 @@ const recalibrateGyro = () => {
 };
 
 const enableMotion = async () => {
+  if (typeof window === 'undefined' || typeof (window as Window & { DeviceOrientationEvent?: unknown }).DeviceOrientationEvent === 'undefined') {
+    gyroPermission.value = 'denied';
+    return;
+  }
   const orientation = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
     requestPermission?: () => Promise<'granted' | 'denied'>;
   };
@@ -853,21 +857,24 @@ onMounted(async () => {
   await setupScroll();
   window.addEventListener('resize', resize);
   window.addEventListener('pointermove', onPointerMove, { passive: true });
+  const hasOrientationApi = typeof (window as Window & { DeviceOrientationEvent?: unknown }).DeviceOrientationEvent !== 'undefined';
   const orientation = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
     requestPermission?: () => Promise<'granted' | 'denied'>;
   };
   const isMobile = isCoarsePointer;
   if (!onboardingAsked.value) {
     showPermissionPrompt.value = true;
-  } else if (isMobile && typeof orientation.requestPermission === 'function') {
+  } else if (isMobile && hasOrientationApi && typeof orientation.requestPermission === 'function') {
     if (gyroPermission.value === 'granted') await enableMotion();
     else if (gyroPermission.value !== 'denied') showMotionPrompt.value = true;
-  } else {
+  } else if (hasOrientationApi) {
     gyroCalibrated = false;
     window.addEventListener('deviceorientation', onDeviceOrientation, true);
     window.addEventListener('deviceorientationabsolute', onDeviceOrientation as EventListener, true);
     window.addEventListener('devicemotion', onDeviceMotion, true);
     gyroPermission.value = 'granted';
+  } else {
+    gyroPermission.value = 'denied';
   }
   document.addEventListener('visibilitychange', onVisibility);
 
@@ -945,7 +952,16 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.root {
+  scroll-snap-type: y mandatory;
+}
+
 .scroll-panel {
   position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 </style>
