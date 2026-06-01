@@ -10,14 +10,6 @@
     >
       Enable Motion
     </button>
-    <button
-      v-if="showSoundPrompt"
-      type="button"
-      class="fixed right-4 top-32 z-30 rounded-full bg-black/60 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-lime-300"
-      @click="enableSound"
-    >
-      Enable Sound
-    </button>
 
     <div class="relative z-10">
       <section
@@ -72,6 +64,7 @@
 <script setup lang="ts">
 import * as THREE from 'three';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { useBackgroundAudio } from '~/composables/useBackgroundAudio';
 import { useGsap } from '~/composables/useGsap';
 import { usePrefersReducedMotion } from '~/composables/usePrefersReducedMotion';
 
@@ -116,7 +109,7 @@ const path: StopPoint[] = [
 const root = ref<HTMLElement | null>(null);
 const stage = ref<HTMLElement | null>(null);
 const showMotionPrompt = ref(false);
-const showSoundPrompt = ref(false);
+const { init: initBackgroundAudio } = useBackgroundAudio();
 const { loadGsap, trackAnimation, addCleanup } = useGsap();
 const { prefersReducedMotion } = usePrefersReducedMotion();
 
@@ -127,7 +120,6 @@ let world: THREE.Group | null = null;
 let particleField: THREE.Points | null = null;
 let grassField: THREE.LineSegments | null = null;
 let treeGroup: THREE.Group | null = null;
-let bgMusic: HTMLAudioElement | null = null;
 let grassRoots: Float32Array | null = null;
 let grassTips: Float32Array | null = null;
 let grassSeeds: Float32Array | null = null;
@@ -532,16 +524,6 @@ const enableMotion = async () => {
   }
 };
 
-const enableSound = async () => {
-  if (!bgMusic) return;
-  try {
-    await bgMusic.play();
-    showSoundPrompt.value = false;
-  } catch {
-    // Keep prompt visible if playback is blocked.
-  }
-};
-
 const render = () => {
   if (!renderer || !scene || !camera) return;
   if (!running) return;
@@ -629,17 +611,7 @@ const onVisibility = () => {
 
 onMounted(async () => {
   const musicUrl = new URL('../../assets/music/bg-music-2.mp3', import.meta.url).href;
-  bgMusic = new Audio(musicUrl);
-  bgMusic.loop = true;
-  bgMusic.volume = 0.5;
-  void bgMusic.play()
-    .then(() => {
-      showSoundPrompt.value = false;
-    })
-    .catch(() => {
-      // Autoplay can be blocked until user interaction.
-      showSoundPrompt.value = true;
-    });
+  await initBackgroundAudio(musicUrl, 0.5);
 
   setupScene();
   resize();
@@ -661,10 +633,6 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   stopRender();
-  if (bgMusic) {
-    bgMusic.pause();
-    bgMusic.currentTime = 0;
-  }
   window.removeEventListener('resize', resize);
   window.removeEventListener('pointermove', onPointerMove);
   window.removeEventListener('deviceorientation', onDeviceOrientation, true);
@@ -687,7 +655,6 @@ onBeforeUnmount(() => {
   particleField = null;
   grassField = null;
   treeGroup = null;
-  bgMusic = null;
   grassRoots = null;
   grassTips = null;
   grassSeeds = null;
