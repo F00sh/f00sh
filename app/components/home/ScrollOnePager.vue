@@ -176,6 +176,7 @@ let frameId = 0;
 let smoothScrollFrame = 0;
 let running = true;
 let isLowPower = false;
+let isMemoryConstrained = false;
 let isCoarsePointer = false;
 let dprCap = 1.5;
 let targetFrameMs = 16;
@@ -216,7 +217,9 @@ const terrainNormal = (x: number, z: number) => {
 
 const createTerrainWire = () => {
   const segments: Array<[THREE.Vector3, THREE.Vector3]> = [];
-  const minX = -16; const maxX = 16; const minZ = -66; const maxZ = 6; const xSteps = 26; const zSteps = 52;
+  const minX = -16; const maxX = 16; const minZ = -66; const maxZ = 6;
+  const xSteps = isMemoryConstrained ? 16 : 26;
+  const zSteps = isMemoryConstrained ? 30 : 52;
   for (let zi = 0; zi <= zSteps; zi += 1) {
     const z = THREE.MathUtils.mapLinear(zi, 0, zSteps, maxZ, minZ);
     for (let xi = 0; xi < xSteps; xi += 1) {
@@ -465,7 +468,7 @@ const createPebblePath = () => {
     const len = Math.max(Math.hypot(dx, dz), 0.001);
     const nx = -dz / len;
     const nz = dx / len;
-    const steps = 44;
+    const steps = isMemoryConstrained ? 24 : 44;
 
     for (let j = 0; j <= steps; j += 1) {
       const t = j / steps;
@@ -473,22 +476,22 @@ const createPebblePath = () => {
       const baseZ = THREE.MathUtils.lerp(a.z, b.z, t);
 
       // Main route pebbles
-      tryPlace(baseX, baseZ, 0.028, 0.09, 12);
+      tryPlace(baseX, baseZ, 0.028, 0.09, isMemoryConstrained ? 6 : 12);
 
       // Side scatter (both sides)
       const sideOffsetA = THREE.MathUtils.randFloat(0.16, 0.72);
       const sideOffsetB = THREE.MathUtils.randFloat(0.16, 0.72);
-      tryPlace(baseX + nx * sideOffsetA, baseZ + nz * sideOffsetA, 0.025, 0.08, 9);
-      tryPlace(baseX - nx * sideOffsetB, baseZ - nz * sideOffsetB, 0.025, 0.08, 9);
+      tryPlace(baseX + nx * sideOffsetA, baseZ + nz * sideOffsetA, 0.025, 0.08, isMemoryConstrained ? 5 : 9);
+      tryPlace(baseX - nx * sideOffsetB, baseZ - nz * sideOffsetB, 0.025, 0.08, isMemoryConstrained ? 5 : 9);
       const sideOffsetC = THREE.MathUtils.randFloat(0.4, 0.95);
       const sideOffsetD = THREE.MathUtils.randFloat(0.4, 0.95);
-      tryPlace(baseX + nx * sideOffsetC, baseZ + nz * sideOffsetC, 0.022, 0.07, 8);
-      tryPlace(baseX - nx * sideOffsetD, baseZ - nz * sideOffsetD, 0.022, 0.07, 8);
+      tryPlace(baseX + nx * sideOffsetC, baseZ + nz * sideOffsetC, 0.022, 0.07, isMemoryConstrained ? 4 : 8);
+      tryPlace(baseX - nx * sideOffsetD, baseZ - nz * sideOffsetD, 0.022, 0.07, isMemoryConstrained ? 4 : 8);
       if (j % 2 === 0) {
         const sideOffsetE = THREE.MathUtils.randFloat(0.22, 0.78);
         const sideOffsetF = THREE.MathUtils.randFloat(0.22, 0.78);
-        tryPlace(baseX + nx * sideOffsetE, baseZ + nz * sideOffsetE, 0.02, 0.065, 7);
-        tryPlace(baseX - nx * sideOffsetF, baseZ - nz * sideOffsetF, 0.02, 0.065, 7);
+        tryPlace(baseX + nx * sideOffsetE, baseZ + nz * sideOffsetE, 0.02, 0.065, isMemoryConstrained ? 4 : 7);
+        tryPlace(baseX - nx * sideOffsetF, baseZ - nz * sideOffsetF, 0.02, 0.065, isMemoryConstrained ? 4 : 7);
       }
     }
   }
@@ -515,10 +518,14 @@ const setupScene = () => {
   if (!stage.value) return;
   const isMobile = window.matchMedia('(max-width: 900px)').matches;
   const isReduced = prefersReducedMotion.value;
-  isLowPower = isMobile || isReduced;
+  const nav = navigator as Navigator & { deviceMemory?: number; hardwareConcurrency?: number };
+  const lowMem = typeof nav.deviceMemory === 'number' && nav.deviceMemory <= 4;
+  const lowCpu = typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency <= 4;
+  isMemoryConstrained = lowMem || lowCpu;
+  isLowPower = isMobile || isReduced || isMemoryConstrained;
   isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
-  dprCap = isLowPower ? 1 : 1.5;
-  targetFrameMs = isReduced ? 1000 / 36 : (isCoarsePointer ? 1000 / 55 : 1000 / 60);
+  dprCap = isMemoryConstrained ? 0.9 : (isLowPower ? 1 : 1.5);
+  targetFrameMs = isReduced ? 1000 / 36 : (isMemoryConstrained ? 1000 / 30 : (isCoarsePointer ? 1000 / 55 : 1000 / 60));
 
   renderer = new THREE.WebGLRenderer({
     alpha: true,
@@ -540,9 +547,9 @@ const setupScene = () => {
   scene.add(ambient, key);
 
   world = new THREE.Group();
-  particleField = createParticles(isLowPower ? 520 : 1200);
-  grassField = createGrass(isLowPower ? 2600 : 6200);
-  treeGroup = createTrees(isLowPower ? 16 : 28);
+  particleField = createParticles(isMemoryConstrained ? 300 : (isLowPower ? 520 : 1200));
+  grassField = createGrass(isMemoryConstrained ? 1300 : (isLowPower ? 2600 : 6200));
+  treeGroup = createTrees(isMemoryConstrained ? 10 : (isLowPower ? 16 : 28));
 
   world.add(createTerrainWire(), createPebblePath(), particleField, grassField, treeGroup);
   path.forEach((p, i) => world?.add(createLandmark(p, i)));
@@ -696,11 +703,11 @@ const render = () => {
   frameTick += 1;
 
   const elapsed = performance.now() * 0.001;
-  if (particleField) particleField.rotation.y += isLowPower ? 0.00018 : 0.00035;
+  if (particleField) particleField.rotation.y += isMemoryConstrained ? 0.00012 : (isLowPower ? 0.00018 : 0.00035);
   if (grassField && grassRoots && grassTips && grassSeeds) {
     const positions = grassField.geometry.getAttribute('position') as THREE.BufferAttribute;
     const array = positions.array as Float32Array;
-    const tipStep = isLowPower ? 3 : 2;
+    const tipStep = isMemoryConstrained ? 5 : (isLowPower ? 3 : 2);
     for (let i = 0; i < grassSeeds.length; i += 1) {
       if (isLowPower && i % tipStep !== frameTick % tipStep) continue;
       const r = i * 3;
@@ -723,7 +730,7 @@ const render = () => {
   const alpha = 1 - Math.exp(-followRate * dt);
   parallaxX = THREE.MathUtils.lerp(parallaxX, targetParallaxX, alpha);
   parallaxY = THREE.MathUtils.lerp(parallaxY, targetParallaxY, alpha);
-  if (!isLowPower || frameTick % 2 === 0) leafInstances.forEach((leaf) => {
+  if (!isLowPower || frameTick % (isMemoryConstrained ? 4 : 2) === 0) leafInstances.forEach((leaf) => {
     const sway = Math.sin(elapsed * 1.9 + leaf.seed) * leaf.amplitude;
     leaf.mesh.position.x = leaf.basePosition.x + sway;
     leaf.mesh.position.y = leaf.basePosition.y + Math.cos(elapsed * 1.4 + leaf.seed * 1.3) * leaf.amplitude * 0.45;
@@ -938,6 +945,7 @@ onBeforeUnmount(() => {
   gyroBaseBeta = 0;
   gyroBaseGamma = 0;
   isCoarsePointer = false;
+  isMemoryConstrained = false;
   smoothScrollEnabled = false;
   mobileSnapEnabled = false;
   sectionSnapLock = false;

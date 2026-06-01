@@ -29,6 +29,8 @@ let micStream: MediaStream | null = null;
 let particleBaseDirs: Float32Array | null = null;
 let micRetryBound = false;
 let gestureUnlockBound = false;
+let isSphereLowMemory = false;
+let frameTick = 0;
 const shaderUniforms = {
   uTime: { value: 0 },
   uAudioIntensity: { value: 0 },
@@ -42,6 +44,12 @@ const getAudioContextCtor = () =>
 const isAppleMobile = () => {
   const ua = navigator.userAgent || '';
   return /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && 'ontouchend' in document);
+};
+const isLowMemoryDevice = () => {
+  const nav = navigator as Navigator & { deviceMemory?: number; hardwareConcurrency?: number };
+  const lowMem = typeof nav.deviceMemory === 'number' && nav.deviceMemory <= 4;
+  const lowCpu = typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency <= 4;
+  return lowMem || lowCpu;
 };
 
 const hash3 = (x: number, y: number, z: number) => {
@@ -224,6 +232,7 @@ const resize = () => {
 
 const animate = () => {
   if (!renderer || !scene || !camera || !mesh) return;
+  frameTick += 1;
 
   const t = performance.now() * 0.001;
   const musicEnergy = getAudioEnergy();
@@ -233,10 +242,12 @@ const animate = () => {
   shaderUniforms.uTime.value = t;
   shaderUniforms.uAudioIntensity.value = energy;
 
-  if (particleSystem && particleBaseDirs) {
+  if (particleSystem && particleBaseDirs && (!isSphereLowMemory || frameTick % 2 === 0)) {
     const pAttr = particleSystem.geometry.attributes.position as THREE.BufferAttribute;
     const pArr = pAttr.array as Float32Array;
-    const follow = Math.min(0.16 + energy * 0.12, 0.28);
+    const follow = isSphereLowMemory
+      ? Math.min(0.1 + energy * 0.08, 0.2)
+      : Math.min(0.16 + energy * 0.12, 0.28);
     const flow = t * 0.5;
     const intensity = energy * shaderUniforms.uAudioDisplacementBoost.value;
     for (let i = 0; i < pAttr.count; i += 1) {
@@ -281,17 +292,18 @@ const animate = () => {
 onMounted(async () => {
   if (!mount.value) return;
   const iosMobile = isAppleMobile();
+  isSphereLowMemory = isLowMemoryDevice() || iosMobile;
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setClearColor(0x040705, 0);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, iosMobile ? 1 : 1.5));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, isSphereLowMemory ? 0.9 : 1.5));
   mount.value.appendChild(renderer.domElement);
 
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
   camera.position.set(0, 0, 7);
 
-  const geometry = new THREE.IcosahedronGeometry(sphereRadius, iosMobile ? 2 : 4);
+  const geometry = new THREE.IcosahedronGeometry(sphereRadius, isSphereLowMemory ? 2 : 4);
   const material = new THREE.ShaderMaterial({
     uniforms: shaderUniforms,
     transparent: true,
@@ -447,7 +459,7 @@ onMounted(async () => {
   );
   scene.add(fillMesh);
 
-  const particleCount = iosMobile ? 1200 : 4200;
+  const particleCount = isSphereLowMemory ? 900 : 4200;
   particleBaseDirs = new Float32Array(particleCount * 3);
   const particlePositions = new Float32Array(particleCount * 3);
   for (let i = 0; i < particleCount; i += 1) {
@@ -531,5 +543,7 @@ onBeforeUnmount(() => {
   particleBaseDirs = null;
   micRetryBound = false;
   gestureUnlockBound = false;
+  isSphereLowMemory = false;
+  frameTick = 0;
 });
 </script>
