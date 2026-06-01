@@ -6,9 +6,11 @@
 import * as THREE from 'three';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useBackgroundAudio } from '~/composables/useBackgroundAudio';
+import { usePermissionPrefs } from '~/composables/usePermissionPrefs';
 
 const mount = ref<HTMLElement | null>(null);
 const { audio } = useBackgroundAudio();
+const { micPermission } = usePermissionPrefs();
 
 let renderer: THREE.WebGLRenderer | null = null;
 let scene: THREE.Scene | null = null;
@@ -140,10 +142,12 @@ const setupMicrophoneAnalyser = async () => {
     micAnalyser.smoothingTimeConstant = 0.82;
     micSource.connect(micAnalyser);
     micFreqData = new Uint8Array(micAnalyser.frequencyBinCount);
+    micPermission.value = 'granted';
   } catch {
     micAnalyser = null;
     micFreqData = null;
     micStream = null;
+    micPermission.value = 'denied';
   }
 };
 
@@ -432,7 +436,9 @@ onMounted(async () => {
   scene.add(particleSystem);
 
   await setupAudioAnalyser();
-  await setupMicrophoneAnalyser();
+  if (micPermission.value !== 'denied') {
+    await setupMicrophoneAnalyser();
+  }
   resize();
   window.addEventListener('resize', resize);
   frame = requestAnimationFrame(animate);

@@ -65,6 +65,7 @@
 import * as THREE from 'three';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useGsap } from '~/composables/useGsap';
+import { usePermissionPrefs } from '~/composables/usePermissionPrefs';
 import { usePrefersReducedMotion } from '~/composables/usePrefersReducedMotion';
 
 type SectionItem = {
@@ -109,6 +110,7 @@ const root = ref<HTMLElement | null>(null);
 const stage = ref<HTMLElement | null>(null);
 const showMotionPrompt = ref(false);
 const { loadGsap, trackAnimation, addCleanup } = useGsap();
+const { gyroPermission } = usePermissionPrefs();
 const { prefersReducedMotion } = usePrefersReducedMotion();
 
 let renderer: THREE.WebGLRenderer | null = null;
@@ -513,11 +515,16 @@ const enableMotion = async () => {
   try {
     if (typeof orientation.requestPermission === 'function') {
       const status = await orientation.requestPermission();
-      if (status !== 'granted') return;
+      if (status !== 'granted') {
+        gyroPermission.value = 'denied';
+        return;
+      }
     }
     window.addEventListener('deviceorientation', onDeviceOrientation, true);
+    gyroPermission.value = 'granted';
     showMotionPrompt.value = false;
   } catch {
+    gyroPermission.value = 'denied';
     // Keep prompt visible if permission fails.
   }
 };
@@ -619,9 +626,14 @@ onMounted(async () => {
   };
   const isMobile = window.matchMedia('(pointer: coarse)').matches;
   if (isMobile && typeof orientation.requestPermission === 'function') {
-    showMotionPrompt.value = true;
+    if (gyroPermission.value === 'granted') {
+      await enableMotion();
+    } else if (gyroPermission.value !== 'denied') {
+      showMotionPrompt.value = true;
+    }
   } else {
     window.addEventListener('deviceorientation', onDeviceOrientation, true);
+    gyroPermission.value = 'granted';
   }
   document.addEventListener('visibilitychange', onVisibility);
 });
