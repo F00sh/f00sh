@@ -118,6 +118,7 @@ let world: THREE.Group | null = null;
 let particleField: THREE.Points | null = null;
 let grassField: THREE.LineSegments | null = null;
 let treeGroup: THREE.Group | null = null;
+let bgMusic: HTMLAudioElement | null = null;
 let grassRoots: Float32Array | null = null;
 let grassTips: Float32Array | null = null;
 let grassSeeds: Float32Array | null = null;
@@ -608,6 +609,14 @@ const onVisibility = () => {
 };
 
 onMounted(async () => {
+  const musicUrl = new URL('../../assets/music/bg-music-2.mp3', import.meta.url).href;
+  bgMusic = new Audio(musicUrl);
+  bgMusic.loop = true;
+  bgMusic.volume = 0.5;
+  void bgMusic.play().catch(() => {
+    // Autoplay can be blocked until user interaction.
+  });
+
   setupScene();
   resize();
   render();
@@ -628,6 +637,10 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   stopRender();
+  if (bgMusic) {
+    bgMusic.pause();
+    bgMusic.currentTime = 0;
+  }
   window.removeEventListener('resize', resize);
   window.removeEventListener('pointermove', onPointerMove);
   window.removeEventListener('deviceorientation', onDeviceOrientation, true);
@@ -650,6 +663,7 @@ onBeforeUnmount(() => {
   particleField = null;
   grassField = null;
   treeGroup = null;
+  bgMusic = null;
   grassRoots = null;
   grassTips = null;
   grassSeeds = null;
