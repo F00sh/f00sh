@@ -1,10 +1,10 @@
 <template>
   <main
     class="relative bg-neutral-950 pt-14 text-neutral-50 sm:pt-16"
-    :class="isHome ? 'min-h-screen' : 'h-screen h-[100svh] h-[100dvh] overflow-hidden flex flex-col'"
+    :class="isHome ? 'min-h-screen' : 'min-h-screen flex flex-col md:h-screen md:h-[100svh] md:h-[100dvh] md:overflow-hidden'"
   >
     <SiteHeader />
-    <div :class="isHome ? 'pb-16 sm:pb-20' : 'flex-1 min-h-0 overflow-hidden pb-16 sm:pb-20'">
+    <div :class="isHome ? 'pb-16 sm:pb-20' : 'flex-1 min-h-0 overflow-visible pb-16 sm:pb-20 md:overflow-hidden'">
       <NuxtPage />
     </div>
     <SiteFooter />
