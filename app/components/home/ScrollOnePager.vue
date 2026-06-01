@@ -10,6 +10,31 @@
     >
       Enable Motion
     </button>
+    <div v-if="showPermissionPrompt" class="fixed inset-0 z-40 grid place-items-center bg-black/70 px-4">
+      <div class="w-full max-w-lg bg-neutral-950/95 p-6 text-neutral-100">
+        <p class="font-ibm-plex-mono text-xs uppercase tracking-[0.22em] text-lime-300">Permissions</p>
+        <h2 class="mt-3 font-space-grotesk text-3xl tracking-[-0.03em]">Enable Interactive Features</h2>
+        <p class="mt-3 text-sm text-neutral-300">
+          To enable full FOOSH experience, allow microphone, motion/gyro and location access.
+        </p>
+        <div class="mt-5 flex gap-3">
+          <button
+            type="button"
+            class="rounded-full bg-lime-300 px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-neutral-950"
+            @click="requestLaunchPermissions"
+          >
+            Allow
+          </button>
+          <button
+            type="button"
+            class="rounded-full bg-white/10 px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-neutral-200"
+            @click="skipLaunchPermissions"
+          >
+            Skip
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div class="relative z-10">
       <section
@@ -109,8 +134,9 @@ const path: StopPoint[] = [
 const root = ref<HTMLElement | null>(null);
 const stage = ref<HTMLElement | null>(null);
 const showMotionPrompt = ref(false);
+const showPermissionPrompt = ref(false);
 const { loadGsap, trackAnimation, addCleanup } = useGsap();
-const { gyroPermission } = usePermissionPrefs();
+const { gyroPermission, micPermission, geoPermission, onboardingAsked } = usePermissionPrefs();
 const { prefersReducedMotion } = usePrefersReducedMotion();
 
 let renderer: THREE.WebGLRenderer | null = null;
@@ -529,6 +555,49 @@ const enableMotion = async () => {
   }
 };
 
+const requestMicPermission = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    stream.getTracks().forEach((track) => track.stop());
+    micPermission.value = 'granted';
+  } catch {
+    micPermission.value = 'denied';
+  }
+};
+
+const requestGeoPermission = async () => {
+  if (!navigator.geolocation) {
+    geoPermission.value = 'denied';
+    return;
+  }
+  await new Promise<void>((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      () => {
+        geoPermission.value = 'granted';
+        resolve();
+      },
+      () => {
+        geoPermission.value = 'denied';
+        resolve();
+      },
+      { enableHighAccuracy: false, timeout: 9000, maximumAge: 300000 },
+    );
+  });
+};
+
+const requestLaunchPermissions = async () => {
+  await requestMicPermission();
+  await enableMotion();
+  await requestGeoPermission();
+  onboardingAsked.value = true;
+  showPermissionPrompt.value = false;
+};
+
+const skipLaunchPermissions = () => {
+  onboardingAsked.value = true;
+  showPermissionPrompt.value = false;
+};
+
 const render = () => {
   if (!renderer || !scene || !camera) return;
   if (!running) return;
@@ -625,12 +694,11 @@ onMounted(async () => {
     requestPermission?: () => Promise<'granted' | 'denied'>;
   };
   const isMobile = window.matchMedia('(pointer: coarse)').matches;
-  if (isMobile && typeof orientation.requestPermission === 'function') {
-    if (gyroPermission.value === 'granted') {
-      await enableMotion();
-    } else if (gyroPermission.value !== 'denied') {
-      showMotionPrompt.value = true;
-    }
+  if (!onboardingAsked.value) {
+    showPermissionPrompt.value = true;
+  } else if (isMobile && typeof orientation.requestPermission === 'function') {
+    if (gyroPermission.value === 'granted') await enableMotion();
+    else if (gyroPermission.value !== 'denied') showMotionPrompt.value = true;
   } else {
     window.addEventListener('deviceorientation', onDeviceOrientation, true);
     gyroPermission.value = 'granted';
