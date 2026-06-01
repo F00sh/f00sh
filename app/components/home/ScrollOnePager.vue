@@ -2,6 +2,14 @@
   <section ref="root" class="relative isolate overflow-hidden bg-[#040705] text-neutral-50">
     <div ref="stage" class="pointer-events-none fixed inset-0 z-0" aria-hidden="true" />
     <div class="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_82%_14%,rgba(163,230,53,0.14),transparent_30%),linear-gradient(180deg,rgba(4,7,5,0.35),rgba(4,7,5,0.78))]" />
+    <button
+      v-if="showMotionPrompt"
+      type="button"
+      class="fixed right-4 top-20 z-30 rounded-full border border-lime-300 bg-black/60 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-lime-300"
+      @click="enableMotion"
+    >
+      Enable Motion
+    </button>
 
     <div class="relative z-10">
       <section
@@ -99,6 +107,7 @@ const path: StopPoint[] = [
 
 const root = ref<HTMLElement | null>(null);
 const stage = ref<HTMLElement | null>(null);
+const showMotionPrompt = ref(false);
 const { loadGsap, trackAnimation, addCleanup } = useGsap();
 const { prefersReducedMotion } = usePrefersReducedMotion();
 
@@ -370,6 +379,22 @@ const onDeviceOrientation = (event: DeviceOrientationEvent) => {
   targetParallaxY = THREE.MathUtils.mapLinear(clampedBeta, -35, 35, -0.7, 0.7);
 };
 
+const enableMotion = async () => {
+  const orientation = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
+    requestPermission?: () => Promise<'granted' | 'denied'>;
+  };
+  try {
+    if (typeof orientation.requestPermission === 'function') {
+      const status = await orientation.requestPermission();
+      if (status !== 'granted') return;
+    }
+    window.addEventListener('deviceorientation', onDeviceOrientation, true);
+    showMotionPrompt.value = false;
+  } catch {
+    // Keep prompt visible if permission fails.
+  }
+};
+
 const render = () => {
   if (!renderer || !scene || !camera) return;
   if (!running) return;
@@ -445,7 +470,15 @@ onMounted(async () => {
   await setupScroll();
   window.addEventListener('resize', resize);
   window.addEventListener('pointermove', onPointerMove, { passive: true });
-  window.addEventListener('deviceorientation', onDeviceOrientation, true);
+  const orientation = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
+    requestPermission?: () => Promise<'granted' | 'denied'>;
+  };
+  const isMobile = window.matchMedia('(pointer: coarse)').matches;
+  if (isMobile && typeof orientation.requestPermission === 'function') {
+    showMotionPrompt.value = true;
+  } else {
+    window.addEventListener('deviceorientation', onDeviceOrientation, true);
+  }
   document.addEventListener('visibilitychange', onVisibility);
 });
 
