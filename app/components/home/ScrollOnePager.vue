@@ -5,7 +5,7 @@
     <button
       v-if="showMotionPrompt"
       type="button"
-      class="fixed right-4 top-20 z-30 rounded-full border border-lime-300 bg-black/60 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-lime-300"
+      class="fixed right-4 top-20 z-30 rounded-full bg-black/60 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-lime-300"
       @click="enableMotion"
     >
       Enable Motion
@@ -43,7 +43,7 @@
             <NuxtLink
               v-if="item.link"
               :to="item.link.href"
-              class="rounded-full border border-lime-300 px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-lime-300 transition-colors hover:bg-lime-300 hover:text-neutral-950"
+              class="rounded-full px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-lime-300 transition-colors hover:bg-lime-300 hover:text-neutral-950"
             >
               {{ item.link.label }}
             </NuxtLink>
@@ -662,13 +662,5 @@ onBeforeUnmount(() => {
 <style scoped>
 .scroll-panel {
   position: relative;
-}
-
-.scroll-panel::before {
-  content: '';
-  position: absolute;
-  inset: 6.5rem 1rem 1.5rem;
-  pointer-events: none;
-  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 </style>
