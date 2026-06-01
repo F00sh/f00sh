@@ -10,6 +10,14 @@
     >
       Enable Motion
     </button>
+    <button
+      v-if="showSoundPrompt"
+      type="button"
+      class="fixed right-4 top-32 z-30 rounded-full bg-black/60 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-lime-300"
+      @click="enableSound"
+    >
+      Enable Sound
+    </button>
 
     <div class="relative z-10">
       <section
@@ -108,6 +116,7 @@ const path: StopPoint[] = [
 const root = ref<HTMLElement | null>(null);
 const stage = ref<HTMLElement | null>(null);
 const showMotionPrompt = ref(false);
+const showSoundPrompt = ref(false);
 const { loadGsap, trackAnimation, addCleanup } = useGsap();
 const { prefersReducedMotion } = usePrefersReducedMotion();
 
@@ -523,6 +532,16 @@ const enableMotion = async () => {
   }
 };
 
+const enableSound = async () => {
+  if (!bgMusic) return;
+  try {
+    await bgMusic.play();
+    showSoundPrompt.value = false;
+  } catch {
+    // Keep prompt visible if playback is blocked.
+  }
+};
+
 const render = () => {
   if (!renderer || !scene || !camera) return;
   if (!running) return;
@@ -613,9 +632,14 @@ onMounted(async () => {
   bgMusic = new Audio(musicUrl);
   bgMusic.loop = true;
   bgMusic.volume = 0.5;
-  void bgMusic.play().catch(() => {
-    // Autoplay can be blocked until user interaction.
-  });
+  void bgMusic.play()
+    .then(() => {
+      showSoundPrompt.value = false;
+    })
+    .catch(() => {
+      // Autoplay can be blocked until user interaction.
+      showSoundPrompt.value = true;
+    });
 
   setupScene();
   resize();
