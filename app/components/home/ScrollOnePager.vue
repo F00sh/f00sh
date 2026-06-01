@@ -828,7 +828,7 @@ const onTouchMove = (event: TouchEvent) => {
 
 const onTouchEnd = () => {
   if (!mobileSnapEnabled || sectionSnapLock) return;
-  const threshold = 40;
+  const threshold = 80;
   if (Math.abs(touchDeltaY) < threshold) return;
 
   const panels = Array.from(root.value?.querySelectorAll<HTMLElement>('[data-panel]') ?? []);
@@ -839,10 +839,11 @@ const onTouchEnd = () => {
   const nextIndex = THREE.MathUtils.clamp(activeSectionIndex + direction, 0, maxIndex);
   activeSectionIndex = nextIndex;
   const top = panels[nextIndex]?.offsetTop ?? nextIndex * Math.max(window.innerHeight, 1);
-  window.scrollTo({ top, behavior: 'smooth' });
+  // On mobile, instant settle is less jittery under heavy WebGL load.
+  window.scrollTo({ top, behavior: 'auto' });
   window.setTimeout(() => {
     sectionSnapLock = false;
-  }, 650);
+  }, 900);
 };
 
 onMounted(async () => {
