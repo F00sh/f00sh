@@ -365,9 +365,29 @@ const createTrees = (treeCount: number) => {
   };
 
   const group = new THREE.Group();
+  const samplePathXAtZ = (z: number) => {
+    for (let i = 0; i < path.length - 1; i += 1) {
+      const a = path[i].look;
+      const b = path[i + 1].look;
+      const minZ = Math.min(a.z, b.z);
+      const maxZ = Math.max(a.z, b.z);
+      if (z < minZ || z > maxZ) continue;
+      const span = b.z - a.z;
+      const t = Math.abs(span) < 0.0001 ? 0 : (z - a.z) / span;
+      return THREE.MathUtils.lerp(a.x, b.x, THREE.MathUtils.clamp(t, 0, 1));
+    }
+    return path[path.length - 1].look.x;
+  };
+
   for (let i = 0; i < treeCount; i += 1) {
-    const x = THREE.MathUtils.randFloatSpread(26);
     const z = THREE.MathUtils.randFloat(-66, -2);
+    const pathX = samplePathXAtZ(z);
+    const isMobileLayout = isCoarsePointer;
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const lateralOffset = isMobileLayout
+      ? THREE.MathUtils.randFloat(1.4, 4.8)
+      : THREE.MathUtils.randFloat(2.8, 11.5);
+    const x = THREE.MathUtils.clamp(pathX + side * lateralOffset, -13, 13);
     const y = terrainHeight(x, z);
     const tree = new THREE.Group();
     tree.position.set(x, y, z);
