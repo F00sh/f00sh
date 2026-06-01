@@ -1,5 +1,5 @@
 ﻿<template>
-  <section ref="root" class="relative isolate overflow-hidden bg-[#040705] text-neutral-50">
+  <section ref="root" class="relative isolate bg-[#040705] text-neutral-50">
     <div ref="stage" class="pointer-events-none fixed inset-0 z-0" aria-hidden="true" />
     <div class="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_82%_14%,rgba(163,230,53,0.14),transparent_30%),linear-gradient(180deg,rgba(4,7,5,0.35),rgba(4,7,5,0.78))]" />
     <button
