@@ -154,6 +154,7 @@ let frameId = 0;
 let smoothScrollFrame = 0;
 let running = true;
 let isLowPower = false;
+let isCoarsePointer = false;
 let dprCap = 1.5;
 let targetFrameMs = 16;
 let lastRenderAt = 0;
@@ -163,6 +164,8 @@ let parallaxX = 0;
 let parallaxY = 0;
 let targetParallaxX = 0;
 let targetParallaxY = 0;
+let lastMotionUpdateAt = 0;
+let motionSource: 'none' | 'orientation' | 'motion' = 'none';
 let smoothScrollEnabled = false;
 let smoothScrollCurrent = 0;
 let smoothScrollTarget = 0;
@@ -482,8 +485,9 @@ const setupScene = () => {
   const isMobile = window.matchMedia('(max-width: 900px)').matches;
   const isReduced = prefersReducedMotion.value;
   isLowPower = isMobile || isReduced;
+  isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
   dprCap = isLowPower ? 1 : 1.5;
-  targetFrameMs = isLowPower ? 1000 / 36 : 1000 / 60;
+  targetFrameMs = isReduced ? 1000 / 36 : (isCoarsePointer ? 1000 / 55 : 1000 / 60);
 
   renderer = new THREE.WebGLRenderer({
     alpha: true,
@@ -533,6 +537,8 @@ const onPointerMove = (event: PointerEvent) => {
 
 const onDeviceOrientation = (event: DeviceOrientationEvent) => {
   if (event.beta == null || event.gamma == null) return;
+  motionSource = 'orientation';
+  lastMotionUpdateAt = performance.now();
   const clampedGamma = THREE.MathUtils.clamp(event.gamma, -35, 35);
   const clampedBeta = THREE.MathUtils.clamp(event.beta - 45, -35, 35);
   targetParallaxX = THREE.MathUtils.mapLinear(clampedGamma, -35, 35, -0.95, 0.95);
@@ -540,8 +546,11 @@ const onDeviceOrientation = (event: DeviceOrientationEvent) => {
 };
 
 const onDeviceMotion = (event: DeviceMotionEvent) => {
+  if (motionSource === 'orientation' && performance.now() - lastMotionUpdateAt < 140) return;
   const rate = event.rotationRate;
   if (!rate) return;
+  motionSource = 'motion';
+  lastMotionUpdateAt = performance.now();
   const gamma = typeof rate.gamma === 'number' ? rate.gamma : 0;
   const beta = typeof rate.beta === 'number' ? rate.beta : 0;
   const clampedGamma = THREE.MathUtils.clamp(gamma, -35, 35);
@@ -652,8 +661,11 @@ const render = () => {
     }
     positions.needsUpdate = true;
   }
-  parallaxX = THREE.MathUtils.lerp(parallaxX, targetParallaxX, 0.06);
-  parallaxY = THREE.MathUtils.lerp(parallaxY, targetParallaxY, 0.06);
+  const dt = Math.max(Math.min(targetFrameMs / 1000, 1 / 24), 1 / 120);
+  const followRate = isCoarsePointer ? 15 : 10;
+  const alpha = 1 - Math.exp(-followRate * dt);
+  parallaxX = THREE.MathUtils.lerp(parallaxX, targetParallaxX, alpha);
+  parallaxY = THREE.MathUtils.lerp(parallaxY, targetParallaxY, alpha);
   if (!isLowPower || frameTick % 2 === 0) leafInstances.forEach((leaf) => {
     const sway = Math.sin(elapsed * 1.9 + leaf.seed) * leaf.amplitude;
     leaf.mesh.position.x = leaf.basePosition.x + sway;
@@ -751,7 +763,7 @@ onMounted(async () => {
   const orientation = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
     requestPermission?: () => Promise<'granted' | 'denied'>;
   };
-  const isMobile = window.matchMedia('(pointer: coarse)').matches;
+  const isMobile = isCoarsePointer;
   if (!onboardingAsked.value) {
     showPermissionPrompt.value = true;
   } else if (isMobile && typeof orientation.requestPermission === 'function') {
@@ -810,6 +822,9 @@ onBeforeUnmount(() => {
   leafInstances.length = 0;
   lastRenderAt = 0;
   frameTick = 0;
+  lastMotionUpdateAt = 0;
+  motionSource = 'none';
+  isCoarsePointer = false;
   smoothScrollEnabled = false;
   smoothScrollCurrent = 0;
   smoothScrollTarget = 0;
