@@ -151,6 +151,7 @@ let grassTips: Float32Array | null = null;
 let grassSeeds: Float32Array | null = null;
 const leafInstances: LeafInstance[] = [];
 let frameId = 0;
+let smoothScrollFrame = 0;
 let running = true;
 let isLowPower = false;
 let dprCap = 1.5;
@@ -162,6 +163,10 @@ let parallaxX = 0;
 let parallaxY = 0;
 let targetParallaxX = 0;
 let targetParallaxY = 0;
+let smoothScrollEnabled = false;
+let smoothScrollCurrent = 0;
+let smoothScrollTarget = 0;
+let smoothScrollInternal = false;
 
 const terrainHeight = (x: number, z: number) => -2.3 + Math.sin(z * 0.12 + x * 0.08) * 0.38 + Math.cos(z * 0.07) * 0.22;
 const terrainNormal = (x: number, z: number) => {
@@ -702,6 +707,40 @@ const onVisibility = () => {
   else stopRender();
 };
 
+const smoothScrollStep = () => {
+  if (!smoothScrollEnabled) return;
+  const delta = smoothScrollTarget - smoothScrollCurrent;
+  smoothScrollCurrent += delta * 0.11;
+  if (Math.abs(delta) < 0.35) {
+    smoothScrollCurrent = smoothScrollTarget;
+  } else {
+    smoothScrollFrame = requestAnimationFrame(smoothScrollStep);
+  }
+  smoothScrollInternal = true;
+  window.scrollTo(0, smoothScrollCurrent);
+  smoothScrollInternal = false;
+};
+
+const onWheelSmooth = (event: WheelEvent) => {
+  if (!smoothScrollEnabled) return;
+  event.preventDefault();
+  const max = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0);
+  smoothScrollTarget = THREE.MathUtils.clamp(smoothScrollTarget + event.deltaY, 0, max);
+  if (!smoothScrollFrame) {
+    smoothScrollFrame = requestAnimationFrame(() => {
+      smoothScrollFrame = 0;
+      smoothScrollStep();
+    });
+  }
+};
+
+const onNativeScroll = () => {
+  if (!smoothScrollEnabled || smoothScrollInternal) return;
+  const y = window.scrollY;
+  smoothScrollCurrent = y;
+  smoothScrollTarget = y;
+};
+
 onMounted(async () => {
   setupScene();
   resize();
@@ -725,6 +764,15 @@ onMounted(async () => {
     gyroPermission.value = 'granted';
   }
   document.addEventListener('visibilitychange', onVisibility);
+
+  const prefersFinePointer = window.matchMedia('(pointer: fine)').matches;
+  if (!prefersReducedMotion.value && prefersFinePointer) {
+    smoothScrollEnabled = true;
+    smoothScrollCurrent = window.scrollY;
+    smoothScrollTarget = window.scrollY;
+    window.addEventListener('wheel', onWheelSmooth, { passive: false });
+    window.addEventListener('scroll', onNativeScroll, { passive: true });
+  }
 });
 
 onBeforeUnmount(() => {
@@ -735,6 +783,9 @@ onBeforeUnmount(() => {
   window.removeEventListener('deviceorientationabsolute', onDeviceOrientation as EventListener, true);
   window.removeEventListener('devicemotion', onDeviceMotion, true);
   document.removeEventListener('visibilitychange', onVisibility);
+  window.removeEventListener('wheel', onWheelSmooth);
+  window.removeEventListener('scroll', onNativeScroll);
+  if (smoothScrollFrame) cancelAnimationFrame(smoothScrollFrame);
 
   world?.traverse((node) => {
     const object = node as THREE.Mesh | THREE.Line | THREE.LineSegments | THREE.Points;
@@ -759,6 +810,11 @@ onBeforeUnmount(() => {
   leafInstances.length = 0;
   lastRenderAt = 0;
   frameTick = 0;
+  smoothScrollEnabled = false;
+  smoothScrollCurrent = 0;
+  smoothScrollTarget = 0;
+  smoothScrollInternal = false;
+  smoothScrollFrame = 0;
 });
 </script>
 
