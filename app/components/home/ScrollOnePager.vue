@@ -182,6 +182,8 @@ let targetFrameMs = 16;
 let lastRenderAt = 0;
 let frameTick = 0;
 const lookTarget = new THREE.Vector3(path[0].look.x, path[0].look.y, path[0].look.z);
+const cameraFollowTarget = new THREE.Vector3(path[0].camera.x, path[0].camera.y, path[0].camera.z);
+const lookFollowTarget = new THREE.Vector3(path[0].look.x, path[0].look.y, path[0].look.z);
 let parallaxX = 0;
 let parallaxY = 0;
 let targetParallaxX = 0;
@@ -192,10 +194,10 @@ let gyroCalibrated = false;
 let gyroBaseBeta = 0;
 let gyroBaseGamma = 0;
 let smoothScrollEnabled = false;
-let smoothScrollCurrent = 0;
-let smoothScrollTarget = 0;
-let smoothScrollInternal = false;
 let sectionSnapLock = false;
+let wheelDeltaAccumulator = 0;
+let wheelAccumulatorResetTimer = 0;
+let activeSectionIndex = 0;
 
 const terrainHeight = (x: number, z: number) => -2.3 + Math.sin(z * 0.12 + x * 0.08) * 0.38 + Math.cos(z * 0.07) * 0.22;
 const terrainNormal = (x: number, z: number) => {
@@ -706,6 +708,10 @@ const render = () => {
     positions.needsUpdate = true;
   }
   const dt = Math.max(Math.min(targetFrameMs / 1000, 1 / 24), 1 / 120);
+  const cameraLagRate = isCoarsePointer ? 2.6 : 3.2;
+  const cameraLagAlpha = 1 - Math.exp(-cameraLagRate * dt);
+  camera.position.lerp(cameraFollowTarget, cameraLagAlpha);
+  lookTarget.lerp(lookFollowTarget, cameraLagAlpha);
   const followRate = isCoarsePointer ? 15 : 10;
   const alpha = 1 - Math.exp(-followRate * dt);
   parallaxX = THREE.MathUtils.lerp(parallaxX, targetParallaxX, alpha);
@@ -739,7 +745,7 @@ const setupScroll = async () => {
   if (!prefersReducedMotion.value) {
     const timeline = gsap.timeline({ defaults: { ease: 'none' }, scrollTrigger: { trigger: root.value, start: 'top top', end: 'bottom bottom', scrub: 1 } });
     path.slice(1).forEach((point, index) => {
-      timeline.to(camera.position, { ...point.camera, duration: 1 }, index).to(lookTarget, { ...point.look, duration: 1 }, index);
+      timeline.to(cameraFollowTarget, { ...point.camera, duration: 1 }, index).to(lookFollowTarget, { ...point.look, duration: 1 }, index);
     });
     trackAnimation(timeline);
   }
@@ -763,47 +769,47 @@ const onVisibility = () => {
   else stopRender();
 };
 
-const smoothScrollStep = () => {
-  if (!smoothScrollEnabled) return;
-  const delta = smoothScrollTarget - smoothScrollCurrent;
-  smoothScrollCurrent += delta * 0.11;
-  if (Math.abs(delta) < 0.35) {
-    smoothScrollCurrent = smoothScrollTarget;
-  } else {
-    smoothScrollFrame = requestAnimationFrame(smoothScrollStep);
-  }
-  smoothScrollInternal = true;
-  window.scrollTo(0, smoothScrollCurrent);
-  smoothScrollInternal = false;
-};
-
 const onWheelSmooth = (event: WheelEvent) => {
   if (!smoothScrollEnabled) return;
   event.preventDefault();
   if (sectionSnapLock) return;
+
+  // Normalize line/page wheel deltas and accumulate micro-moves.
+  const unit = event.deltaMode === 1 ? 40 : (event.deltaMode === 2 ? window.innerHeight : 1);
+  wheelDeltaAccumulator += event.deltaY * unit;
+  if (wheelAccumulatorResetTimer) window.clearTimeout(wheelAccumulatorResetTimer);
+  wheelAccumulatorResetTimer = window.setTimeout(() => {
+    wheelDeltaAccumulator = 0;
+  }, 120);
+  if (Math.abs(wheelDeltaAccumulator) < 24) return;
+
   sectionSnapLock = true;
+  const panels = Array.from(root.value?.querySelectorAll<HTMLElement>('[data-panel]') ?? []);
+  if (!panels.length) {
+    sectionSnapLock = false;
+    wheelDeltaAccumulator = 0;
+    return;
+  }
   const h = Math.max(window.innerHeight, 1);
   const maxIndex = Math.max(sections.length - 1, 0);
-  const currentIndex = Math.round((window.scrollY || 0) / h);
-  const direction = event.deltaY > 0 ? 1 : -1;
-  const nextIndex = THREE.MathUtils.clamp(currentIndex + direction, 0, maxIndex);
-  smoothScrollTarget = nextIndex * h;
-  if (!smoothScrollFrame) {
-    smoothScrollFrame = requestAnimationFrame(() => {
-      smoothScrollFrame = 0;
-      smoothScrollStep();
-    });
-  }
+  const inferredIndex = Math.round((window.scrollY || 0) / h);
+  activeSectionIndex = THREE.MathUtils.clamp(inferredIndex, 0, maxIndex);
+  const direction = wheelDeltaAccumulator > 0 ? 1 : -1;
+  const nextIndex = THREE.MathUtils.clamp(activeSectionIndex + direction, 0, maxIndex);
+  wheelDeltaAccumulator = 0;
+  activeSectionIndex = nextIndex;
+  const top = panels[nextIndex]?.offsetTop ?? nextIndex * h;
+  window.scrollTo({ top, behavior: 'smooth' });
   window.setTimeout(() => {
     sectionSnapLock = false;
-  }, 420);
+  }, 650);
 };
 
 const onNativeScroll = () => {
-  if (!smoothScrollEnabled || smoothScrollInternal) return;
-  const y = window.scrollY;
-  smoothScrollCurrent = y;
-  smoothScrollTarget = y;
+  if (!smoothScrollEnabled) return;
+  const h = Math.max(window.innerHeight, 1);
+  const maxIndex = Math.max(sections.length - 1, 0);
+  activeSectionIndex = THREE.MathUtils.clamp(Math.round((window.scrollY || 0) / h), 0, maxIndex);
 };
 
 onMounted(async () => {
@@ -834,8 +840,7 @@ onMounted(async () => {
   const prefersFinePointer = window.matchMedia('(pointer: fine)').matches;
   if (!prefersReducedMotion.value && prefersFinePointer) {
     smoothScrollEnabled = true;
-    smoothScrollCurrent = window.scrollY;
-    smoothScrollTarget = window.scrollY;
+    activeSectionIndex = THREE.MathUtils.clamp(Math.round((window.scrollY || 0) / Math.max(window.innerHeight, 1)), 0, Math.max(sections.length - 1, 0));
     window.addEventListener('wheel', onWheelSmooth, { passive: false });
     window.addEventListener('scroll', onNativeScroll, { passive: true });
   }
@@ -883,10 +888,11 @@ onBeforeUnmount(() => {
   gyroBaseGamma = 0;
   isCoarsePointer = false;
   smoothScrollEnabled = false;
-  smoothScrollCurrent = 0;
-  smoothScrollTarget = 0;
-  smoothScrollInternal = false;
   sectionSnapLock = false;
+  wheelDeltaAccumulator = 0;
+  if (wheelAccumulatorResetTimer) window.clearTimeout(wheelAccumulatorResetTimer);
+  wheelAccumulatorResetTimer = 0;
+  activeSectionIndex = 0;
   smoothScrollFrame = 0;
 });
 </script>
