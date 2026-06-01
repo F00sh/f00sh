@@ -194,10 +194,13 @@ let gyroCalibrated = false;
 let gyroBaseBeta = 0;
 let gyroBaseGamma = 0;
 let smoothScrollEnabled = false;
+let mobileSnapEnabled = false;
 let sectionSnapLock = false;
 let wheelDeltaAccumulator = 0;
 let wheelAccumulatorResetTimer = 0;
 let activeSectionIndex = 0;
+let touchStartY = 0;
+let touchDeltaY = 0;
 
 const terrainHeight = (x: number, z: number) => -2.3 + Math.sin(z * 0.12 + x * 0.08) * 0.38 + Math.cos(z * 0.07) * 0.22;
 const terrainNormal = (x: number, z: number) => {
@@ -806,10 +809,40 @@ const onWheelSmooth = (event: WheelEvent) => {
 };
 
 const onNativeScroll = () => {
-  if (!smoothScrollEnabled) return;
+  if (!smoothScrollEnabled && !mobileSnapEnabled) return;
   const h = Math.max(window.innerHeight, 1);
   const maxIndex = Math.max(sections.length - 1, 0);
   activeSectionIndex = THREE.MathUtils.clamp(Math.round((window.scrollY || 0) / h), 0, maxIndex);
+};
+
+const onTouchStart = (event: TouchEvent) => {
+  if (!mobileSnapEnabled || !event.touches.length) return;
+  touchStartY = event.touches[0].clientY;
+  touchDeltaY = 0;
+};
+
+const onTouchMove = (event: TouchEvent) => {
+  if (!mobileSnapEnabled || !event.touches.length) return;
+  touchDeltaY = event.touches[0].clientY - touchStartY;
+};
+
+const onTouchEnd = () => {
+  if (!mobileSnapEnabled || sectionSnapLock) return;
+  const threshold = 40;
+  if (Math.abs(touchDeltaY) < threshold) return;
+
+  const panels = Array.from(root.value?.querySelectorAll<HTMLElement>('[data-panel]') ?? []);
+  if (!panels.length) return;
+  sectionSnapLock = true;
+  const maxIndex = Math.max(sections.length - 1, 0);
+  const direction = touchDeltaY < 0 ? 1 : -1;
+  const nextIndex = THREE.MathUtils.clamp(activeSectionIndex + direction, 0, maxIndex);
+  activeSectionIndex = nextIndex;
+  const top = panels[nextIndex]?.offsetTop ?? nextIndex * Math.max(window.innerHeight, 1);
+  window.scrollTo({ top, behavior: 'smooth' });
+  window.setTimeout(() => {
+    sectionSnapLock = false;
+  }, 650);
 };
 
 onMounted(async () => {
@@ -843,6 +876,13 @@ onMounted(async () => {
     activeSectionIndex = THREE.MathUtils.clamp(Math.round((window.scrollY || 0) / Math.max(window.innerHeight, 1)), 0, Math.max(sections.length - 1, 0));
     window.addEventListener('wheel', onWheelSmooth, { passive: false });
     window.addEventListener('scroll', onNativeScroll, { passive: true });
+  } else if (!prefersReducedMotion.value && isCoarsePointer) {
+    mobileSnapEnabled = true;
+    activeSectionIndex = THREE.MathUtils.clamp(Math.round((window.scrollY || 0) / Math.max(window.innerHeight, 1)), 0, Math.max(sections.length - 1, 0));
+    window.addEventListener('scroll', onNativeScroll, { passive: true });
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
   }
 });
 
@@ -856,6 +896,9 @@ onBeforeUnmount(() => {
   document.removeEventListener('visibilitychange', onVisibility);
   window.removeEventListener('wheel', onWheelSmooth);
   window.removeEventListener('scroll', onNativeScroll);
+  window.removeEventListener('touchstart', onTouchStart);
+  window.removeEventListener('touchmove', onTouchMove);
+  window.removeEventListener('touchend', onTouchEnd);
   if (smoothScrollFrame) cancelAnimationFrame(smoothScrollFrame);
 
   world?.traverse((node) => {
@@ -888,11 +931,14 @@ onBeforeUnmount(() => {
   gyroBaseGamma = 0;
   isCoarsePointer = false;
   smoothScrollEnabled = false;
+  mobileSnapEnabled = false;
   sectionSnapLock = false;
   wheelDeltaAccumulator = 0;
   if (wheelAccumulatorResetTimer) window.clearTimeout(wheelAccumulatorResetTimer);
   wheelAccumulatorResetTimer = 0;
   activeSectionIndex = 0;
+  touchStartY = 0;
+  touchDeltaY = 0;
   smoothScrollFrame = 0;
 });
 </script>
