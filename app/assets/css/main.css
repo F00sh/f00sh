@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 @layer base {
   :root {
@@ -17,19 +17,19 @@
 }
 
 @layer utilities {
-    .font-archivo-black {
-        font-family: "Archivo Black", sans-serif;
-    }
+  .font-space-grotesk {
+    font-family: "Space Grotesk", sans-serif;
+  }
 
-    .font-dm-mono {
-        font-family: "DM Mono", monospace;
-    }
+  .font-manrope {
+    font-family: "Manrope", sans-serif;
+  }
 
-    .font-atkinson-hyperlegible {
-        font-family: "Atkinson Hyperlegible", sans-serif;
-    }
+  .font-ibm-plex-mono {
+    font-family: "IBM Plex Mono", monospace;
+  }
 
-    .focus-outline {
-        @apply rounded-sm outline-none ring-offset-2 ring-offset-neutral-950 transition-shadow focus-visible:ring-2 focus-visible:ring-lime-400;
-    }
+  .focus-outline {
+    @apply rounded-sm outline-none ring-offset-2 ring-offset-neutral-950 transition-shadow focus-visible:ring-2 focus-visible:ring-lime-400;
+  }
 }

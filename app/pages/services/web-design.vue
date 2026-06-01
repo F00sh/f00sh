@@ -1,0 +1,3 @@
+﻿<template><section class="mx-auto w-[min(94%,76rem)] py-16"><h1 class="text-5xl tracking-[-0.04em] md:text-8xl">Modern websites with sharp visuals and clean structure.</h1><p class="mt-6 max-w-3xl text-neutral-300">Nuxt development, responsive layouts, and SEO-ready structure with selective motion and 3D enhancements.</p><NuxtLink to="/contact" class="mt-8 inline-block text-xs uppercase tracking-[0.22em] text-lime-300">Design a modern website</NuxtLink></section></template>
+<script setup lang="ts">useSeoMeta({ title: 'Web Design & Nuxt Development — FOOSH', description: 'Modern website design and Nuxt development with motion and responsive structure.' });</script>
+

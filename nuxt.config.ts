@@ -1,4 +1,4 @@
-import tailwindcss from "@tailwindcss/vite";
+﻿import tailwindcss from "@tailwindcss/vite";
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
@@ -15,21 +15,15 @@ export default defineNuxtConfig({
 
   googleFonts: {
     families: {
-      // Correct family name
-      "Archivo Black": true,
-
-      // Correct family name + choose weights you need
-      "DM Mono": [400],
-
-      "Atkinson Hyperlegible": [200, 400, 800],
+      "Space Grotesk": [400, 500, 700],
+      Manrope: [400, 500, 700, 800],
+      "IBM Plex Mono": [400, 500],
     },
     display: "swap",
     subsets: ["latin"],
     preload: true,
     preconnect: true,
     prefetch: true,
-
-    // If you use download:true, remove the manual head links (done here)
     download: true,
   },
 });

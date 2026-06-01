@@ -1,21 +1,15 @@
-<template>
-  <main class="relative z-10 bg-neutral-950 text-neutral-50">
-    <SiteHeader />
-    <ScrollOnePager />
-    <SiteFooter />
-  </main>
+﻿<template>
+  <ScrollOnePager />
 </template>
 
 <script setup lang="ts">
-import ScrollOnePager from "~/components/home/ScrollOnePager.vue";
+import ScrollOnePager from '~/components/home/ScrollOnePager.vue';
 
-useHead({
-  title: "f00sh - 3D interactive portfolio",
-  meta: [
-    {
-      name: "description",
-      content: "A Three.js and GSAP-powered one-page portfolio with scroll-driven 3D transitions.",
-    },
-  ],
+useSeoMeta({
+  title: 'FOOSH — 3D Modeling, Animation & Interactive Web Design',
+  description: 'FOOSH creates 3D models, 3D animations, interactive Three.js websites, and web-based 3D applications for products, brands, and creative teams.',
+  ogTitle: 'FOOSH — 3D Modeling, Animation & Interactive Web Design',
+  ogDescription: 'Creative services for 3D modeling, animation, interactive web experiences, and modern Nuxt websites by FOOSH.',
+  twitterCard: 'summary_large_image',
 });
 </script>

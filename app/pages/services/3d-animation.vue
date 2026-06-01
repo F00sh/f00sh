@@ -1,0 +1,3 @@
+﻿<template><section class="mx-auto w-[min(94%,76rem)] py-16"><h1 class="text-5xl tracking-[-0.04em] md:text-8xl">3D animation for products, brands and digital stories.</h1><p class="mt-6 max-w-3xl text-neutral-300">Motion design for product reveals, logo animation and campaign visuals, including short-form social formats.</p><NuxtLink to="/contact" class="mt-8 inline-block text-xs uppercase tracking-[0.22em] text-lime-300">Create a 3D animation</NuxtLink></section></template>
+<script setup lang="ts">useSeoMeta({ title: '3D Animation Services — FOOSH', description: '3D animation services for products, brands and visual storytelling.' });</script>
+
