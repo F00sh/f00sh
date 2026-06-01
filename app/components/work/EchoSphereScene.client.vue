@@ -14,6 +14,7 @@ let renderer: THREE.WebGLRenderer | null = null;
 let scene: THREE.Scene | null = null;
 let camera: THREE.PerspectiveCamera | null = null;
 let mesh: THREE.Mesh<THREE.IcosahedronGeometry, THREE.ShaderMaterial> | null = null;
+let edgeMesh: THREE.Mesh<THREE.IcosahedronGeometry, THREE.ShaderMaterial> | null = null;
 let fillMesh: THREE.Mesh<THREE.IcosahedronGeometry, THREE.ShaderMaterial> | null = null;
 let particleSystem: THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial> | null = null;
 let frame = 0;
@@ -162,6 +163,22 @@ const resize = () => {
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+
+  // Keep the sphere fitting the mobile viewport width.
+  const isMobile = w < 768;
+  let sphereScale = 1;
+  if (isMobile) {
+    const distance = camera.position.length();
+    const fovRad = THREE.MathUtils.degToRad(camera.fov);
+    const visibleHeight = 2 * Math.tan(fovRad / 2) * distance;
+    const visibleWidth = visibleHeight * camera.aspect;
+    const targetWidthRatio = 0.9;
+    sphereScale = (visibleWidth * targetWidthRatio) / (2 * sphereRadius);
+  }
+  if (mesh) mesh.scale.setScalar(sphereScale);
+  if (edgeMesh) edgeMesh.scale.setScalar(sphereScale * 1.006);
+  if (fillMesh) fillMesh.scale.setScalar(sphereScale);
+  if (particleSystem) particleSystem.scale.setScalar(sphereScale);
 };
 
 const animate = () => {
@@ -207,6 +224,9 @@ const animate = () => {
   }
 
   mesh.rotation.y -= 0.0012;
+  if (edgeMesh) {
+    edgeMesh.rotation.copy(mesh.rotation);
+  }
   if (fillMesh) {
     fillMesh.rotation.copy(mesh.rotation);
   }
@@ -300,6 +320,14 @@ onMounted(async () => {
   });
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
+  edgeMesh = new THREE.Mesh(
+    geometry,
+    material.clone()
+  );
+  edgeMesh.material.uniforms = shaderUniforms;
+  edgeMesh.material.depthWrite = false;
+  edgeMesh.material.depthTest = true;
+  scene.add(edgeMesh);
   const fillMaterial = new THREE.ShaderMaterial({
     uniforms: shaderUniforms,
     transparent: true,
@@ -416,6 +444,7 @@ onBeforeUnmount(() => {
 
   mesh?.geometry.dispose();
   mesh?.material.dispose();
+  edgeMesh?.material.dispose();
   fillMesh?.material.dispose();
   particleSystem?.geometry.dispose();
   particleSystem?.material.dispose();
@@ -433,6 +462,7 @@ onBeforeUnmount(() => {
   scene = null;
   camera = null;
   mesh = null;
+  edgeMesh = null;
   fillMesh = null;
   particleSystem = null;
   analyser = null;
