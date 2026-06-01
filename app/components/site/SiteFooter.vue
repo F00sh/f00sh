@@ -13,25 +13,24 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 
-const footerHidden = ref(false);
-let lastY = 0;
+const footerHidden = ref(true);
 
 const onScroll = () => {
   const y = window.scrollY || 0;
-  if (y <= 8) {
-    footerHidden.value = false;
-  } else {
-    footerHidden.value = y > lastY;
-  }
-  lastY = y;
+  const viewport = window.innerHeight || 0;
+  const fullHeight = document.documentElement.scrollHeight || 0;
+  const bottomThreshold = 24;
+  footerHidden.value = y + viewport < fullHeight - bottomThreshold;
 };
 
 onMounted(() => {
-  lastY = window.scrollY || 0;
+  onScroll();
   window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', onScroll);
+  window.removeEventListener('resize', onScroll);
 });
 </script>
