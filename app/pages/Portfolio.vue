@@ -1,5 +1,5 @@
 <template>
-  <main class="relative z-10 min-h-screen bg-neutral-950 text-neutral-50">
+  <main class="relative z-10 min-h-screen bg-neutral-950 pb-16 pt-14 text-neutral-50 sm:pb-20 sm:pt-16">
     <HeroScene />
     <SiteHeader />
     <PortfolioGrid />

@@ -69,7 +69,7 @@
           <h1
             v-if="index === 0"
             :id="`${item.id}-title`"
-            class="mt-4 max-w-5xl font-space-grotesk text-[clamp(2.9rem,8.4vw,7.2rem)] leading-[0.86] tracking-[-0.04em]"
+            class="mt-4 max-w-5xl font-space-grotesk text-[clamp(2.2rem,7.3vw,7.2rem)] leading-[0.9] tracking-[-0.04em] sm:leading-[0.86]"
             data-reveal
           >
             {{ item.title }}
@@ -77,12 +77,12 @@
           <h2
             v-else
             :id="`${item.id}-title`"
-            class="mt-4 max-w-5xl font-space-grotesk text-[clamp(2.1rem,6.2vw,5.3rem)] leading-[0.9] tracking-[-0.03em]"
+            class="mt-4 max-w-5xl font-space-grotesk text-[clamp(1.7rem,5.7vw,5.3rem)] leading-[0.94] tracking-[-0.03em] sm:leading-[0.9]"
             data-reveal
           >
             {{ item.title }}
           </h2>
-          <p class="mt-6 max-w-2xl text-[clamp(1rem,1.9vw,1.25rem)] leading-7 text-neutral-200" data-reveal>{{ item.description }}</p>
+          <p class="mt-5 max-w-2xl text-[clamp(0.94rem,1.7vw,1.18rem)] leading-6 text-neutral-200 sm:mt-6 sm:leading-7" data-reveal>{{ item.description }}</p>
           <div class="mt-7 flex flex-wrap gap-3" data-reveal>
             <NuxtLink
               v-if="item.link"

@@ -1,5 +1,5 @@
 <template>
-  <main class="relative z-10 min-h-screen bg-[var(--foosh-bg)] text-[var(--foosh-text)]">
+  <main class="relative z-10 min-h-screen bg-[var(--foosh-bg)] pb-16 pt-14 text-[var(--foosh-text)] sm:pb-20 sm:pt-16">
     <HeroScene />
     <SiteHeader />
     <ProjectDetailView :project="project" />
