@@ -1,5 +1,5 @@
 ﻿<template>
-  <div ref="mount" class="h-[56vh] min-h-[24rem] w-full" />
+  <div ref="mount" class="h-full w-full" />
 </template>
 
 <script setup lang="ts">
@@ -14,11 +14,15 @@ let renderer: THREE.WebGLRenderer | null = null;
 let scene: THREE.Scene | null = null;
 let camera: THREE.PerspectiveCamera | null = null;
 let mesh: THREE.Mesh<THREE.IcosahedronGeometry, THREE.ShaderMaterial> | null = null;
+let fillMesh: THREE.Mesh<THREE.IcosahedronGeometry, THREE.ShaderMaterial> | null = null;
 let particleSystem: THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial> | null = null;
 let frame = 0;
 let analyser: AnalyserNode | null = null;
 let freqData: Uint8Array | null = null;
+let micAnalyser: AnalyserNode | null = null;
+let micFreqData: Uint8Array | null = null;
 let audioContext: AudioContext | null = null;
+let micStream: MediaStream | null = null;
 let particleBaseDirs: Float32Array | null = null;
 const shaderUniforms = {
   uTime: { value: 0 },
@@ -118,6 +122,38 @@ const getAudioEnergy = () => {
   return (sum / freqData.length) / 255;
 };
 
+const setupMicrophoneAnalyser = async () => {
+  if (!audioContext) return;
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      },
+      video: false
+    });
+    const micSource = audioContext.createMediaStreamSource(micStream);
+    micAnalyser = audioContext.createAnalyser();
+    micAnalyser.fftSize = 1024;
+    micAnalyser.smoothingTimeConstant = 0.82;
+    micSource.connect(micAnalyser);
+    micFreqData = new Uint8Array(micAnalyser.frequencyBinCount);
+  } catch {
+    micAnalyser = null;
+    micFreqData = null;
+    micStream = null;
+  }
+};
+
+const getMicEnergy = () => {
+  if (!micAnalyser || !micFreqData) return 0;
+  micAnalyser.getByteFrequencyData(micFreqData);
+  let sum = 0;
+  for (let i = 0; i < micFreqData.length; i += 1) sum += micFreqData[i];
+  return (sum / micFreqData.length) / 255;
+};
+
 const resize = () => {
   if (!renderer || !camera || !mount.value) return;
   const w = mount.value.clientWidth;
@@ -132,8 +168,10 @@ const animate = () => {
   if (!renderer || !scene || !camera || !mesh) return;
 
   const t = performance.now() * 0.001;
-  const rawEnergy = getAudioEnergy();
-  const energy = Math.min(1, Math.pow(rawEnergy * 1.9, 1.35));
+  const musicEnergy = getAudioEnergy();
+  const micEnergy = getMicEnergy();
+  const mergedEnergy = Math.min(1, Math.max(musicEnergy, micEnergy * 1.4));
+  const energy = Math.min(1, Math.pow(mergedEnergy * 2.1, 1.35));
   shaderUniforms.uTime.value = t;
   shaderUniforms.uAudioIntensity.value = energy;
 
@@ -168,9 +206,13 @@ const animate = () => {
     pAttr.needsUpdate = true;
   }
 
-  mesh.rotation.y += 0.003 + energy * 0.02;
-  mesh.rotation.x += 0.0012;
-
+  mesh.rotation.y -= 0.0012;
+  if (fillMesh) {
+    fillMesh.rotation.copy(mesh.rotation);
+  }
+  if (particleSystem) {
+    particleSystem.rotation.copy(mesh.rotation);
+  }
   renderer.render(scene, camera);
   frame = requestAnimationFrame(animate);
 };
@@ -252,14 +294,83 @@ onMounted(async () => {
     fragmentShader: `
       varying float vDispSigned;
       void main() {
-        float neutral = 0.28;
-        float shade = clamp(neutral + vDispSigned * 0.18, 0.12, 0.42);
-        gl_FragColor = vec4(vec3(shade), 0.9);
+        gl_FragColor = vec4(vec3(0.0), 0.95);
       }
     `
   });
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
+  const fillMaterial = new THREE.ShaderMaterial({
+    uniforms: shaderUniforms,
+    transparent: true,
+    depthWrite: false,
+    vertexShader: `
+      uniform float uTime;
+      uniform float uAudioIntensity;
+      uniform float uAudioDisplacementBoost;
+
+      float hash(vec3 p) {
+        p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
+        p *= 17.0;
+        return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+      }
+
+      float noise3(vec3 p) {
+        vec3 i = floor(p);
+        vec3 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+
+        float n000 = hash(i + vec3(0.0, 0.0, 0.0));
+        float n100 = hash(i + vec3(1.0, 0.0, 0.0));
+        float n010 = hash(i + vec3(0.0, 1.0, 0.0));
+        float n110 = hash(i + vec3(1.0, 1.0, 0.0));
+        float n001 = hash(i + vec3(0.0, 0.0, 1.0));
+        float n101 = hash(i + vec3(1.0, 0.0, 1.0));
+        float n011 = hash(i + vec3(0.0, 1.0, 1.0));
+        float n111 = hash(i + vec3(1.0, 1.0, 1.0));
+
+        float nx00 = mix(n000, n100, f.x);
+        float nx10 = mix(n010, n110, f.x);
+        float nx01 = mix(n001, n101, f.x);
+        float nx11 = mix(n011, n111, f.x);
+        float nxy0 = mix(nx00, nx10, f.y);
+        float nxy1 = mix(nx01, nx11, f.y);
+        return mix(nxy0, nxy1, f.z);
+      }
+
+      float fbm(vec3 p) {
+        float value = 0.0;
+        float amplitude = 0.5;
+        float frequency = 1.0;
+        for (int i = 0; i < 4; i++) {
+          value += amplitude * noise3(p * frequency);
+          frequency *= 2.0;
+          amplitude *= 0.5;
+        }
+        return value;
+      }
+
+      void main() {
+        vec3 n = normalize(normal);
+        float flow = uTime * 0.5;
+        float noiseValue = fbm(position * 1.5 + vec3(flow, flow * 0.7, -flow * 0.9));
+        float signedNoise = noiseValue * 2.0 - 1.0;
+        float displacement = signedNoise * (uAudioIntensity * uAudioDisplacementBoost);
+        vec3 displaced = position + n * displacement;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(displaced, 1.0);
+      }
+    `,
+    fragmentShader: `
+      void main() {
+        gl_FragColor = vec4(vec3(0.18), 0.4);
+      }
+    `
+  });
+  fillMesh = new THREE.Mesh(
+    geometry,
+    fillMaterial
+  );
+  scene.add(fillMesh);
 
   const particleCount = 4200;
   particleBaseDirs = new Float32Array(particleCount * 3);
@@ -293,6 +404,7 @@ onMounted(async () => {
   scene.add(particleSystem);
 
   await setupAudioAnalyser();
+  await setupMicrophoneAnalyser();
   resize();
   window.addEventListener('resize', resize);
   frame = requestAnimationFrame(animate);
@@ -304,6 +416,7 @@ onBeforeUnmount(() => {
 
   mesh?.geometry.dispose();
   mesh?.material.dispose();
+  fillMesh?.material.dispose();
   particleSystem?.geometry.dispose();
   particleSystem?.material.dispose();
   renderer?.dispose();
@@ -312,15 +425,22 @@ onBeforeUnmount(() => {
   if (audioContext && audioContext.state !== 'closed') {
     void audioContext.close();
   }
+  if (micStream) {
+    for (const track of micStream.getTracks()) track.stop();
+  }
 
   renderer = null;
   scene = null;
   camera = null;
   mesh = null;
+  fillMesh = null;
   particleSystem = null;
   analyser = null;
   freqData = null;
+  micAnalyser = null;
+  micFreqData = null;
   audioContext = null;
+  micStream = null;
   particleBaseDirs = null;
 });
 </script>
