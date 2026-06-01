@@ -40,8 +40,8 @@ const spherePos = new THREE.Vector3(0, 2.2, 0);
 const sphereVelocity = new THREE.Vector3(0, 0, 0);
 const sphereRadius = 1.08;
 const gravity = -15.5;
-const airDrag = 0.998;
-const groundDrag = 0.982;
+const airDrag = 0.999;
+const groundDrag = 0.992;
 const maxStepHeight = 0.62;
 const maxHorizontalSpeed = 17.5;
 const maxVerticalSpeed = 16;
@@ -542,9 +542,9 @@ const updateSpherePhysics = (dt: number) => {
     const normal = terrainNormal(spherePos.x, spherePos.z);
     const vn = sphereVelocity.dot(normal);
     if (vn < 0) {
-      const restitution = 1.03;
+      const restitution = 1.12;
       sphereVelocity.addScaledVector(normal, -(1 + restitution) * vn);
-      const tangentDamping = 0.995;
+      const tangentDamping = 0.998;
       const tangent = sphereVelocity.clone().sub(normal.clone().multiplyScalar(sphereVelocity.dot(normal)));
       sphereVelocity.copy(tangent.multiplyScalar(tangentDamping).add(normal.multiplyScalar(sphereVelocity.dot(normal))));
     }
@@ -593,7 +593,7 @@ const onPush = () => {
 
 const onPointerMove = (event: PointerEvent) => {
   const nx = (event.clientX / Math.max(window.innerWidth, 1)) * 2 - 1;
-  targetMouseYaw = THREE.MathUtils.clamp(nx * 0.45, -0.45, 0.45);
+  targetMouseYaw = THREE.MathUtils.clamp(nx * 0.8, -0.8, 0.8);
 };
 
 const resize = () => {
