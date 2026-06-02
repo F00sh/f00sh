@@ -81,6 +81,7 @@
 </template>
 
 <script setup lang="ts">
+// @ts-ignore: missing type declarations for three
 import * as THREE from 'three';
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 
@@ -221,11 +222,16 @@ const formatControlValue = (key: NumericSettingKey) => {
   return key === 'density' || key === 'cameraTilt' ? Math.round(value).toString() : value.toFixed(2);
 };
 
-const averageRange = (data: Uint8Array, from: number, to: number) => {
+const averageRange = (data: Uint8Array | null, from: number, to: number) => {
+  if (!data) return 0;
   const start = Math.max(0, Math.floor(from));
   const end = Math.min(data.length, Math.max(start + 1, Math.floor(to)));
   let sum = 0;
-  for (let i = start; i < end; i += 1) sum += data[i];
+  for (let i = start; i < end; i += 1) {
+    // data is checked above; ensure numeric value to satisfy TS strict checks
+    const v = data[i] ?? 0;
+    sum += v;
+  }
   return (sum / (end - start)) / 255;
 };
 
@@ -258,7 +264,7 @@ const updateAudioState = () => {
   }
 
   analyser.smoothingTimeConstant = settings.smoothing;
-  analyser.getByteFrequencyData(freqData);
+  analyser.getByteFrequencyData(freqData as Uint8Array<ArrayBuffer>);
   const low = averageRange(freqData, 2, 24);
   const mid = averageRange(freqData, 24, 128);
   const high = averageRange(freqData, 128, freqData.length);
@@ -334,7 +340,7 @@ const syncMaterial = () => {
     rippleLines.material.opacity = Math.min(0.5, settings.brightness * 0.42);
   }
   if (surfer) {
-    surfer.traverse((child) => {
+    surfer.traverse((child: THREE.Object3D) => {
       const mesh = child as THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
       if (!mesh.material) return;
       const material = mesh.material as THREE.MeshBasicMaterial;
@@ -540,7 +546,7 @@ const disposeRipple = () => {
 const disposeSurfer = () => {
   if (!surfer || !scene) return;
   scene.remove(surfer);
-  surfer.traverse((child) => {
+  surfer.traverse((child: THREE.Object3D) => {
     const mesh = child as THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
     if (!mesh.geometry || !mesh.material) return;
     mesh.geometry.dispose();
@@ -707,8 +713,8 @@ const updateGrid = (time: number) => {
     const attr = lines.geometry.getAttribute('position') as THREE.BufferAttribute;
     const positions = attr.array as Float32Array;
     for (let i = 0; i < positions.length; i += 3) {
-      const x = bases[i];
-      const z = bases[i + 2];
+      const x = bases[i]!;
+      const z = bases[i + 2]!;
       const horizonFade = THREE.MathUtils.clamp((nearZ - z) / (nearZ - farZ), 0, 1);
       positions[i + 1] = waveHeight(x, z, time) * (1 - horizonFade * 0.35);
     }
@@ -731,12 +737,14 @@ const updateFoam = (time: number) => {
   for (let i = 0; i < foamSeeds.length / 4; i += 1) {
     const positionIndex = i * foamStride;
     const seedIndex = i * 4;
-    const crestBand = foamSeeds[seedIndex];
-    const x = foamSeeds[seedIndex + 1] + Math.sin(time * 0.45 + foamSeeds[seedIndex + 2]) * 0.32;
+    const crestBand = foamSeeds[seedIndex] ?? 0;
+    const seedX = foamSeeds[seedIndex + 1] ?? 0;
+    const seedPhase = foamSeeds[seedIndex + 2] ?? 0;
+    const foamOffset = foamSeeds[seedIndex + 3] ?? 0;
+    const x = seedX + Math.sin(time * 0.45 + seedPhase) * 0.32;
     const targetPhase = Math.PI * 0.5 + crestBand * Math.PI * 2;
     const lipPhaseOffset = Math.sin(x * 0.13) * 1.2;
     const zOnLip = ((targetPhase - lipPhaseOffset) / (0.34 * frequency)) + time * speed * 9;
-    const foamOffset = foamSeeds[seedIndex + 3];
     const z = wrapDepth(zOnLip + foamOffset * (0.18 + audioEnergy * 0.03));
     const y = waveHeight(x, z, time);
     const face = waveHeight(x, z + 0.45, time);
@@ -752,7 +760,7 @@ const updateFoam = (time: number) => {
     const foamDensity = THREE.MathUtils.clamp(topBias * 0.82 + slopeBias * 0.32, 0, 1);
     const visible = foamDensity > Math.abs(foamOffset) * 0.78 && fade < 0.9;
 
-    positions[positionIndex] = x + Math.sin(time * 1.4 + foamSeeds[seedIndex + 2]) * (0.04 + foamDensity * 0.08);
+    positions[positionIndex] = x + Math.sin(time * 1.4 + seedPhase) * (0.04 + foamDensity * 0.08);
     positions[positionIndex + 1] = visible ? y + 0.08 + slope * 0.12 + foamDensity * 0.12 : -80;
     positions[positionIndex + 2] = z;
   }
@@ -809,8 +817,13 @@ const spawnRipple = (x: number, z: number, time: number, velocityX: number, velo
 
 const updateWake = (time: number, delta: number) => {
   if (!wakePoints || !wakeBasePositions || !wakeAge || !wakeLife || !wakeVelocities || !surfer) return;
-  const attr = wakePoints.geometry.getAttribute('position') as THREE.BufferAttribute;
+  const attr = wakePoints.geometry.getAttribute('position');
+  if (!attr) return;
   const positions = attr.array as Float32Array;
+  const wakeBasePositionsArr = wakeBasePositions;
+  const wakeAgeArr = wakeAge;
+  const wakeLifeArr = wakeLife;
+  const wakeVelocitiesArr = wakeVelocities;
   const motionX = surferX - surferTargetX;
   const moving = Math.abs(motionX) > 0.02;
   if (moving) {
@@ -842,18 +855,26 @@ const updateWake = (time: number, delta: number) => {
 
   for (let i = 0; i < wakeParticleCount; i += 1) {
     const baseIndex = i * 3;
-    if (wakeAge[i] >= wakeLife[i]) {
+    const age = wakeAgeArr[i];
+    const life = wakeLifeArr[i];
+    if (age === undefined || life === undefined || age >= life) {
       positions[baseIndex + 1] = -80;
       continue;
     }
 
-    wakeAge[i] += delta;
-    const fade = 1 - (wakeAge[i] / wakeLife[i]);
-    const x = wakeBasePositions[baseIndex] + wakeVelocities[baseIndex] * wakeAge[i];
-    const z = wakeBasePositions[baseIndex + 2] + wakeVelocities[baseIndex + 2] * wakeAge[i];
+    const nextAge = age + delta;
+    wakeAgeArr[i] = nextAge;
+    const fade = 1 - (nextAge / life);
+    const baseX = wakeBasePositionsArr[baseIndex] ?? 0;
+    const baseY = wakeBasePositionsArr[baseIndex + 1] ?? 0;
+    const baseZ = wakeBasePositionsArr[baseIndex + 2] ?? 0;
+    const velX = wakeVelocitiesArr[baseIndex] ?? 0;
+    const velZ = wakeVelocitiesArr[baseIndex + 2] ?? 0;
+    const x = baseX + velX * nextAge;
+    const z = baseZ + velZ * nextAge;
     const surface = waveHeight(x, z, time);
     positions[baseIndex] = x;
-    positions[baseIndex + 1] = surface + wakeBasePositions[baseIndex + 1] + fade * 0.08;
+    positions[baseIndex + 1] = surface + baseY + fade * 0.08;
     positions[baseIndex + 2] = z;
   }
   attr.needsUpdate = true;
@@ -861,14 +882,23 @@ const updateWake = (time: number, delta: number) => {
 
 const updateRipple = (time: number, delta: number) => {
   if (!rippleLines || !rippleBasePositions || !rippleAge || !rippleLife || !rippleRadius || !rippleVelocityX || !rippleVelocityZ || !surfer) return;
-  const attr = rippleLines.geometry.getAttribute('position') as THREE.BufferAttribute;
+  const attr = rippleLines.geometry.getAttribute('position');
+  if (!attr) return;
   const positions = attr.array as Float32Array;
+  const rippleBasePositionsArr = rippleBasePositions;
+  const rippleAgeArr = rippleAge;
+  const rippleLifeArr = rippleLife;
+  const rippleRadiusArr = rippleRadius;
+  const rippleVelocityXArr = rippleVelocityX;
+  const rippleVelocityZArr = rippleVelocityZ;
   const motionX = surferX - surferTargetX;
 
   for (let i = 0; i < rippleCount; i += 1) {
     const baseIndex = i * 3;
     const lineIndex = i * rippleSegments * 2 * 3;
-    if (rippleAge[i] >= rippleLife[i]) {
+    const age = rippleAgeArr[i];
+    const life = rippleLifeArr[i];
+    if (age === undefined || life === undefined || age >= life) {
       for (let j = 0; j < rippleSegments * 2; j += 1) {
         positions[lineIndex + j * 3] = 0;
         positions[lineIndex + j * 3 + 1] = -80;
@@ -877,13 +907,14 @@ const updateRipple = (time: number, delta: number) => {
       continue;
     }
 
-    rippleAge[i] += delta;
-    const progress = rippleAge[i] / rippleLife[i];
+    const currentAge = age + delta;
+    rippleAgeArr[i] = currentAge;
+    const progress = currentAge / life;
     const fade = 1 - progress;
-    const centerX = rippleBasePositions[baseIndex] + rippleVelocityX[i] * rippleAge[i];
-    const centerZ = rippleBasePositions[baseIndex + 2] + rippleVelocityZ[i] * rippleAge[i];
-    const centerY = waveHeight(centerX, centerZ, time) + rippleBasePositions[baseIndex + 1];
-    const radius = rippleRadius[i] + progress * (2.2 + Math.abs(motionX) * 0.7);
+    const centerX = (rippleBasePositionsArr[baseIndex] ?? 0) + (rippleVelocityXArr[i] ?? 0) * currentAge;
+    const centerZ = (rippleBasePositionsArr[baseIndex + 2] ?? 0) + (rippleVelocityZArr[i] ?? 0) * currentAge;
+    const centerY = waveHeight(centerX, centerZ, time) + (rippleBasePositionsArr[baseIndex + 1] ?? 0);
+    const radius = (rippleRadiusArr[i] ?? 0) + progress * (2.2 + Math.abs(motionX) * 0.7);
     const lift = fade * 0.06;
 
     for (let j = 0; j < rippleSegments; j += 1) {
