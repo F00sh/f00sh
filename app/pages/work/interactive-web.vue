@@ -33,7 +33,7 @@ const WorkScene = defineAsyncComponent(() => import('~/components/three/WorkScen
 
 useSeoMeta({
   title: 'Interactive Web Projects — FOOSH',
-  description: 'Interactive web projects by FOOSH, including Echo Sphere and realtime 3D experiences.'
+  description: 'Interactive web projects by FOOSH, including Echo Sphere, Sound Surfer and realtime 3D experiences.'
 });
 
 const projects = [
@@ -42,6 +42,12 @@ const projects = [
     title: 'Echo Sphere',
     text: 'Audio-reactive wireframe ico sphere with realtime deformation, particles and mic input.',
     link: '/work/echo-sphere'
+  },
+  {
+    category: 'Interactive Audio Experience',
+    title: 'Sound Surfer',
+    text: 'An audio-reactive surfing experience where sound energy drives motion, waves and visual feedback.',
+    link: '/work/sound-surfer'
   },
   {
     category: 'Interactive 3D Game',
