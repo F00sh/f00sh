@@ -271,9 +271,9 @@ const createGrass = (count: number) => {
     const x = THREE.MathUtils.randFloatSpread(28);
     const z = THREE.MathUtils.randFloat(-66, 6);
     const y = terrainHeight(x, z);
-    const h = THREE.MathUtils.randFloat(0.16, 0.42);
-    const tx = x + THREE.MathUtils.randFloatSpread(0.06);
-    const tz = z + THREE.MathUtils.randFloatSpread(0.06);
+    const h = THREE.MathUtils.randFloat(0.1, 0.28);
+    const tx = x + THREE.MathUtils.randFloatSpread(0.045);
+    const tz = z + THREE.MathUtils.randFloatSpread(0.045);
     positions[o] = x; positions[o + 1] = y; positions[o + 2] = z;
     positions[o + 3] = tx; positions[o + 4] = y + h; positions[o + 5] = tz;
     grassRoots[r] = x; grassRoots[r + 1] = y; grassRoots[r + 2] = z;
@@ -337,7 +337,7 @@ const createTrees = (treeCount: number) => {
     parent.add(tip);
 
     if (depth === 2) {
-      const leaves = 4 + Math.floor(Math.random() * 3);
+      const leaves = 2 + Math.floor(Math.random() * 3);
       for (let i = 0; i < leaves; i += 1) addLeafCluster(tip);
       return;
     }
@@ -488,7 +488,7 @@ const createPebblePath = () => {
     const len = Math.max(Math.hypot(dx, dz), 0.001);
     const nx = -dz / len;
     const nz = dx / len;
-    const steps = isMemoryConstrained ? 24 : 44;
+    const steps = isMemoryConstrained ? 14 : 28;
 
     for (let j = 0; j <= steps; j += 1) {
       const t = j / steps;
@@ -496,22 +496,24 @@ const createPebblePath = () => {
       const baseZ = THREE.MathUtils.lerp(a.z, b.z, t);
 
       // Main route pebbles
-      tryPlace(baseX, baseZ, 0.028, 0.09, isMemoryConstrained ? 6 : 12);
+      tryPlace(baseX, baseZ, 0.028, 0.09, isMemoryConstrained ? 5 : 8);
 
       // Side scatter (both sides)
       const sideOffsetA = THREE.MathUtils.randFloat(0.16, 0.72);
       const sideOffsetB = THREE.MathUtils.randFloat(0.16, 0.72);
-      tryPlace(baseX + nx * sideOffsetA, baseZ + nz * sideOffsetA, 0.025, 0.08, isMemoryConstrained ? 5 : 9);
-      tryPlace(baseX - nx * sideOffsetB, baseZ - nz * sideOffsetB, 0.025, 0.08, isMemoryConstrained ? 5 : 9);
-      const sideOffsetC = THREE.MathUtils.randFloat(0.4, 0.95);
-      const sideOffsetD = THREE.MathUtils.randFloat(0.4, 0.95);
-      tryPlace(baseX + nx * sideOffsetC, baseZ + nz * sideOffsetC, 0.022, 0.07, isMemoryConstrained ? 4 : 8);
-      tryPlace(baseX - nx * sideOffsetD, baseZ - nz * sideOffsetD, 0.022, 0.07, isMemoryConstrained ? 4 : 8);
+      tryPlace(baseX + nx * sideOffsetA, baseZ + nz * sideOffsetA, 0.025, 0.08, isMemoryConstrained ? 4 : 6);
+      tryPlace(baseX - nx * sideOffsetB, baseZ - nz * sideOffsetB, 0.025, 0.08, isMemoryConstrained ? 4 : 6);
+      if (j % 2 === 0) {
+        const sideOffsetC = THREE.MathUtils.randFloat(0.4, 0.95);
+        const sideOffsetD = THREE.MathUtils.randFloat(0.4, 0.95);
+        tryPlace(baseX + nx * sideOffsetC, baseZ + nz * sideOffsetC, 0.022, 0.07, isMemoryConstrained ? 3 : 5);
+        tryPlace(baseX - nx * sideOffsetD, baseZ - nz * sideOffsetD, 0.022, 0.07, isMemoryConstrained ? 3 : 5);
+      }
       if (j % 2 === 0) {
         const sideOffsetE = THREE.MathUtils.randFloat(0.22, 0.78);
         const sideOffsetF = THREE.MathUtils.randFloat(0.22, 0.78);
-        tryPlace(baseX + nx * sideOffsetE, baseZ + nz * sideOffsetE, 0.02, 0.065, isMemoryConstrained ? 4 : 7);
-        tryPlace(baseX - nx * sideOffsetF, baseZ - nz * sideOffsetF, 0.02, 0.065, isMemoryConstrained ? 4 : 7);
+        tryPlace(baseX + nx * sideOffsetE, baseZ + nz * sideOffsetE, 0.02, 0.065, isMemoryConstrained ? 3 : 5);
+        tryPlace(baseX - nx * sideOffsetF, baseZ - nz * sideOffsetF, 0.02, 0.065, isMemoryConstrained ? 3 : 5);
       }
     }
   }
@@ -568,7 +570,7 @@ const setupScene = () => {
 
   world = new THREE.Group();
   particleField = createParticles(isMemoryConstrained ? 300 : (isLowPower ? 520 : 1200));
-  grassField = createGrass(isMemoryConstrained ? 1300 : (isLowPower ? 2600 : 6200));
+  grassField = createGrass(isMemoryConstrained ? 900 : (isLowPower ? 1700 : 3600));
   treeGroup = createTrees(isMemoryConstrained ? 10 : (isLowPower ? 16 : 28));
 
   world.add(createTerrainWire(), createPebblePath(), particleField, grassField, treeGroup);
