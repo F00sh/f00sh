@@ -17,7 +17,7 @@
           </h1>
 
           <h2
-            class="font-archivo-black text-4xl sm:text-5xl lg:text-5xl
+            class="font-archivo-black text-3xl sm:text-4xl lg:text-5xl
                    tracking-wide uppercase text-purple-100"
           >
             Product design,

@@ -12,7 +12,7 @@
           </p>
 
           <h1
-            class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight uppercase text-yellow-600"
+            class="text-3xl sm:text-4xl lg:text-5xl font-black uppercase text-yellow-600"
           >
             Let’s work together
           </h1>

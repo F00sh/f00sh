@@ -1,6 +1,6 @@
 ﻿<template>
   <section class="mx-auto w-[min(94%,76rem)] py-12">
-    <h2 class="text-5xl tracking-[-0.04em] md:text-7xl">Services</h2>
+    <h2 class="text-4xl md:text-5xl">Services</h2>
     <div class="mt-8 grid gap-4 md:grid-cols-2">
       <NuxtLink v-for="service in services" :key="service.to" :to="service.to" class="border border-white/10 bg-white/[0.02] p-6 hover:border-lime-300/60">
         <p class="text-xs uppercase tracking-[0.22em] text-lime-300">{{ service.tag }}</p>

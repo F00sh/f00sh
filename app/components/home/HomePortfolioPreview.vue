@@ -4,7 +4,7 @@
       <div class="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div>
           <p class="mb-3 text-xs uppercase tracking-[0.2em] text-neutral-500">Portfolio</p>
-          <h2 class="font-archivo-black text-5xl leading-[0.88] text-neutral-50 sm:text-7xl lg:text-8xl">
+          <h2 class="font-archivo-black text-4xl leading-[0.98] text-neutral-50 sm:text-5xl lg:text-6xl">
             Selected Work
           </h2>
         </div>

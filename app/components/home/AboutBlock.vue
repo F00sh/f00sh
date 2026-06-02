@@ -3,7 +3,7 @@
     <div class="mx-auto grid w-full max-w-[88rem] gap-12 lg:grid-cols-12">
       <div class="lg:col-span-7">
         <p class="mb-3 text-xs uppercase tracking-[0.2em] text-neutral-500">About</p>
-        <h2 class="max-w-4xl font-archivo-black text-5xl leading-[0.88] text-neutral-50 sm:text-7xl lg:text-8xl">
+        <h2 class="max-w-4xl font-archivo-black text-4xl leading-[0.98] text-neutral-50 sm:text-5xl lg:text-6xl">
           Product design,<br />
           with range.
         </h2>

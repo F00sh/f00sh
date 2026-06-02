@@ -6,7 +6,7 @@
           <p class="portfolio-meta mb-4 text-xs uppercase tracking-[0.2em] text-neutral-500">
             Portfolio
           </p>
-          <h1 class="portfolio-headline font-archivo-black text-[clamp(3.7rem,13vw,11rem)] leading-[0.84] text-neutral-50">
+          <h1 class="portfolio-headline font-archivo-black text-[clamp(2.4rem,7.4vw,5.8rem)] leading-[0.95] text-neutral-50">
             Selected<br />
             Work
           </h1>

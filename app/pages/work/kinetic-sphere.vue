@@ -5,7 +5,7 @@
     </div>
     <div class="relative z-10 mx-auto w-[min(94%,76rem)] py-16">
       <p class="font-ibm-plex-mono text-xs uppercase tracking-[0.24em] text-lime-300">Interactive 3D Game</p>
-      <h1 class="mt-4 font-space-grotesk text-[clamp(2rem,7vw,5.4rem)] leading-[0.9] tracking-[-0.03em]">Kinetic Sphere</h1>
+      <h1 class="mt-4 font-space-grotesk text-[clamp(1.8rem,5vw,3.8rem)] leading-[0.96]">Kinetic Sphere</h1>
       <p class="mt-5 max-w-3xl text-neutral-300">
         Click to summon an invisible collider wall that shoves the sphere forward across neverending procedural wireframe terrain.
       </p>

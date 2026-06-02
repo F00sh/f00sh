@@ -12,7 +12,7 @@
       >
         <div class="h-full w-full flex items-center justify-center px-6 md:px-10 m-auto">
           <div class="text-center">
-            <h1 class="font-archivo-black text-7xl sm:text-8xl md:text-9xl tracking-widest uppercase whitespace-nowrap text-shadow-lg">
+            <h1 class="font-archivo-black text-5xl sm:text-6xl md:text-7xl tracking-widest uppercase whitespace-nowrap text-shadow-lg">
               f00sh
             </h1>
             <h2 class="md:text-3xl font-dm-mono">

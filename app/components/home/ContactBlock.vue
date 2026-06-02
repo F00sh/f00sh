@@ -2,7 +2,7 @@
   <section id="contact" ref="contactRoot" class="border-t border-neutral-800 px-4 py-20 sm:px-8 lg:px-10">
     <div class="mx-auto w-full max-w-[88rem]">
       <p class="mb-3 text-xs uppercase tracking-[0.2em] text-neutral-500">Contact</p>
-      <h2 class="max-w-5xl font-archivo-black text-5xl leading-[0.88] text-neutral-50 sm:text-7xl lg:text-8xl">
+      <h2 class="max-w-5xl font-archivo-black text-4xl leading-[0.98] text-neutral-50 sm:text-5xl lg:text-6xl">
         Have a project that needs sharp visuals, clean execution, or a strange idea made real?
       </h2>
 

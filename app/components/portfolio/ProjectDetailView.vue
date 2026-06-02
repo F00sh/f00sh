@@ -8,7 +8,7 @@
       <div class="detail-reveal grid gap-10 border-b border-[var(--foosh-line)] pb-14 lg:grid-cols-12 lg:items-end">
         <div class="lg:col-span-8">
           <p class="text-xs uppercase tracking-[0.24em] text-[var(--foosh-muted)]">{{ project.tag }} · {{ project.year }}</p>
-          <h1 class="mt-4 font-josefin text-[clamp(3.2rem,11vw,8rem)] leading-[0.8] uppercase text-[var(--foosh-text)]">
+          <h1 class="mt-4 font-josefin text-[clamp(2.1rem,7vw,5rem)] leading-[0.94] uppercase text-[var(--foosh-text)]">
             {{ project.title }}
           </h1>
           <p class="mt-5 max-w-2xl text-lg text-[var(--foosh-muted)]">

@@ -4,7 +4,7 @@
       <div class="mx-auto grid w-full max-w-[90rem] gap-10 lg:grid-cols-12 lg:items-center">
         <div class="lg:col-span-6">
           <p class="center-meta mb-3 text-xs uppercase tracking-[0.2em] text-[var(--foosh-muted)]">Process</p>
-          <h2 class="center-meta font-josefin text-6xl leading-[0.86] uppercase text-[var(--foosh-text)] sm:text-8xl">
+          <h2 class="center-meta font-josefin text-4xl leading-[0.95] uppercase text-[var(--foosh-text)] sm:text-6xl">
             Motion calibrated.<br />
             Object locked at 50%.
           </h2>

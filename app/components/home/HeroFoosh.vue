@@ -4,7 +4,7 @@
     <div class="mx-auto grid w-[min(94%,76rem)] min-h-[72vh] items-end gap-8 py-16 md:grid-cols-12">
       <div class="md:col-span-8">
         <p data-reveal class="text-xs uppercase tracking-[0.25em] text-lime-300">creative studio</p>
-        <h1 data-reveal class="mt-5 text-[18vw] leading-[0.78] tracking-[-0.07em] text-white md:text-[10vw]">f00sh</h1>
+        <h1 data-reveal class="mt-5 text-[14vw] leading-[0.9] text-white md:text-[7vw]">f00sh</h1>
         <p data-reveal class="mt-6 max-w-2xl text-lg text-neutral-200">3D visuals, animation and interactive web experiences.</p>
         <div data-reveal class="mt-8 flex flex-wrap gap-3">
           <NuxtLink to="/work" class="rounded-full border border-lime-300 px-5 py-3 text-xs uppercase tracking-[0.2em] text-lime-300 hover:bg-lime-300 hover:text-neutral-950">View work</NuxtLink>
