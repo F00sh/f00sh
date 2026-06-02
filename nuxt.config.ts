@@ -15,9 +15,8 @@ export default defineNuxtConfig({
 
   googleFonts: {
     families: {
-      "Space Grotesk": [400, 500, 700],
-      Manrope: [400, 500, 700, 800],
-      "IBM Plex Mono": [400, 500],
+      "Josefin Sans": [400, 500, 600, 700],
+      Montserrat: [400, 500, 600, 700, 800],
     },
     display: "swap",
     subsets: ["latin"],

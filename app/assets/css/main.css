@@ -5,6 +5,10 @@
     --foosh-accent: #a3e635;
   }
 
+  body {
+    font-family: "Montserrat", sans-serif;
+  }
+
   html {
     scroll-behavior: smooth;
   }
@@ -17,16 +21,23 @@
 }
 
 @layer utilities {
+  .font-josefin,
   .font-space-grotesk {
-    font-family: "Space Grotesk", sans-serif;
+    font-family: "Josefin Sans", sans-serif;
   }
 
+  .font-montserrat,
   .font-manrope {
-    font-family: "Manrope", sans-serif;
+    font-family: "Montserrat", sans-serif;
   }
 
+  .font-archivo-black {
+    font-family: "Josefin Sans", sans-serif;
+  }
+
+  .font-dm-mono,
   .font-ibm-plex-mono {
-    font-family: "IBM Plex Mono", monospace;
+    font-family: "Montserrat", sans-serif;
   }
 
   .focus-outline {

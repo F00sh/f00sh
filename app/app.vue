@@ -1,5 +1,5 @@
 ﻿<template>
-  <div id="app-root" class="font-manrope tracking-wide leading-normal text-neutral-50 antialiased">
+  <div id="app-root" class="font-montserrat tracking-wide leading-normal text-neutral-50 antialiased">
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
