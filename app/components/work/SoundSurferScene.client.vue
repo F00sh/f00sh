@@ -110,7 +110,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 // local fallback type for GLTF when typings are unavailable
 type GLTF = any;
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
-import surferModelUrl from '~/assets/3d/surfer.glb?url';
+import surferModelUrl from '../../assets/3d/surfer.glb?url';
 
 type AudioBands = {
   level: number;
