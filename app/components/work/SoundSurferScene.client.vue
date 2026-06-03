@@ -55,48 +55,38 @@
               </span>
               <input v-model="settings.color" type="color" class="h-8 w-full border border-white/10 bg-black/50 sm:h-9" @input="syncMaterial">
             </label>
+
+            <div class="grid gap-2 border-t border-white/10 pt-2 sm:gap-3 sm:pt-3">
+              <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <button
+                  type="button"
+                  class="min-h-10 border border-lime-300 px-3 py-2 text-[0.64rem] font-bold uppercase tracking-[0.16em] text-lime-300 transition-colors hover:bg-lime-300 hover:text-neutral-950 sm:min-h-11 sm:px-4 sm:text-xs sm:tracking-[0.18em]"
+                  @click="toggleMic"
+                >
+                  {{ micActive ? 'Stop Mic' : 'Use Mic' }}
+                </button>
+                <label class="inline-flex min-h-10 cursor-pointer items-center justify-center border border-white/15 px-3 py-2 text-[0.64rem] font-bold uppercase tracking-[0.16em] text-neutral-200 transition-colors hover:border-lime-300 hover:text-lime-300 sm:min-h-11 sm:px-4 sm:text-xs sm:tracking-[0.18em]">
+                  Audio File
+                  <input class="sr-only" type="file" accept="audio/*" @change="loadAudioFile">
+                </label>
+                <button
+                  v-if="audioElement"
+                  type="button"
+                  class="min-h-10 border border-white/15 px-3 py-2 text-[0.64rem] font-bold uppercase tracking-[0.16em] text-neutral-200 transition-colors hover:border-lime-300 hover:text-lime-300 sm:min-h-11 sm:px-4 sm:text-xs sm:tracking-[0.18em]"
+                  @click="togglePlayback"
+                >
+                  {{ filePlaying ? 'Pause File' : 'Play File' }}
+                </button>
+                <div class="col-span-2 flex min-h-10 items-center justify-center border border-white/10 bg-black/35 px-3 py-2 text-[0.64rem] uppercase tracking-[0.16em] text-neutral-300 sm:col-span-1 sm:min-h-11 sm:px-4 sm:text-xs">
+                  Signal {{ Math.round(audioState.level * 100) }}%
+                </div>
+              </div>
+            </div>
           </div>
         </form>
       </div>
 
-      <div class="flex justify-center pt-3 sm:hidden">
-        <h1 class="font-josefin text-[clamp(2.2rem,9vw,3.25rem)] leading-[0.92] text-neutral-50">Sound Surfer</h1>
-      </div>
-
-      <div class="hidden max-w-4xl pt-16 sm:block sm:pt-20">
-        <p class="text-xs uppercase tracking-[0.22em] text-lime-300">Interactive Audio Experience</p>
-        <h1 class="mt-4 font-josefin text-[clamp(2rem,6vw,4.8rem)] leading-[0.94]">Sound Surfer</h1>
-        <p class="mt-5 max-w-2xl text-base leading-7 text-neutral-200 sm:text-lg">
-          An endless wireframe sea where baseline waves stay alive and incoming sound pushes the surface into stronger motion.
-        </p>
-      </div>
-
-      <div class="mt-auto grid gap-3 pb-[max(0.35rem,env(safe-area-inset-bottom))] sm:gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-end">
-        <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
-          <button
-            type="button"
-            class="min-h-11 border border-lime-300 px-3 py-2 text-[0.64rem] font-bold uppercase tracking-[0.16em] text-lime-300 transition-colors hover:bg-lime-300 hover:text-neutral-950 sm:px-5 sm:py-3 sm:text-xs sm:tracking-[0.18em]"
-            @click="toggleMic"
-          >
-            {{ micActive ? 'Stop Mic' : 'Use Mic' }}
-          </button>
-          <label class="inline-flex min-h-11 cursor-pointer items-center justify-center border border-white/15 px-3 py-2 text-[0.64rem] font-bold uppercase tracking-[0.16em] text-neutral-200 transition-colors hover:border-lime-300 hover:text-lime-300 sm:px-5 sm:py-3 sm:text-xs sm:tracking-[0.18em]">
-            Audio File
-            <input class="sr-only" type="file" accept="audio/*" @change="loadAudioFile">
-          </label>
-          <button
-            v-if="audioElement"
-            type="button"
-            class="min-h-11 border border-white/15 px-3 py-2 text-[0.64rem] font-bold uppercase tracking-[0.16em] text-neutral-200 transition-colors hover:border-lime-300 hover:text-lime-300 sm:px-5 sm:py-3 sm:text-xs sm:tracking-[0.18em]"
-            @click="togglePlayback"
-          >
-            {{ filePlaying ? 'Pause File' : 'Play File' }}
-          </button>
-          <div class="col-span-2 flex min-h-11 items-center justify-center border border-white/10 bg-black/35 px-3 py-2 text-[0.64rem] uppercase tracking-[0.16em] text-neutral-300 sm:col-auto sm:px-5 sm:py-3 sm:text-xs">
-            Signal {{ Math.round(audioState.level * 100) }}%
-          </div>
-        </div>
-      </div>
+      <div class="mt-auto pb-[max(0.35rem,env(safe-area-inset-bottom))]"></div>
     </div>
   </section>
 </template>
@@ -199,16 +189,23 @@ let leftPressed = false;
 let rightPressed = false;
 let touchStartX = 0;
 let touchStartY = 0;
+let activePortrait = false;
 
 const planeWidth = 42;
 const nearZ = 20;
 const farZ = -122;
 const surferZ = 13.2;
-const surferLimitX = planeWidth * 0.32;
+const surferFrameMargin = 0.9;
 const surferYaw = THREE.MathUtils.degToRad(90);
 const surferTurnMax = THREE.MathUtils.degToRad(24);
 const surferScreenY = 3.1;
 const surferMaxSpeed = 8.5;
+const landscapeCameraFov = 46;
+const portraitCameraFov = 53;
+const landscapeCameraY = 8.6;
+const portraitCameraY = 9.8;
+const landscapeCameraZ = 24;
+const portraitCameraZ = 28.5;
 const voronoiLift = 0.035;
 const rowDriftSpeed = 4.2;
 const voronoiDriftSpeed = 3.2;
@@ -323,10 +320,32 @@ const waveHeight = (x: number, z: number, time: number) => {
   return longFace + peelingLip + crossWave + shimmer + turbulence;
 };
 
-const setCameraTilt = () => {
+const setCameraFrame = () => {
   if (!camera) return;
-  camera.position.set(0, 8.6, 24);
+  camera.fov = activePortrait ? portraitCameraFov : landscapeCameraFov;
+  camera.position.set(0, activePortrait ? portraitCameraY : landscapeCameraY, activePortrait ? portraitCameraZ : landscapeCameraZ);
   camera.rotation.set(THREE.MathUtils.degToRad(-settings.cameraTilt), 0, 0);
+  camera.updateProjectionMatrix();
+};
+
+const getSurferFrameLimit = (y: number) => {
+  if (!camera) return planeWidth * 0.32;
+  const sample = new THREE.Vector3();
+  const maxX = planeWidth * 0.5;
+  let low = 0;
+  let high = maxX;
+  for (let i = 0; i < 18; i += 1) {
+    const mid = (low + high) * 0.5;
+    sample.set(mid, y, surferZ).project(camera);
+    const withinX = Math.abs(sample.x) <= surferFrameMargin;
+    const withinY = Math.abs(sample.y) <= 0.92;
+    if (withinX && withinY) {
+      low = mid;
+    } else {
+      high = mid;
+    }
+  }
+  return Math.max(3, low - 0.25);
 };
 
 const getSurferWireMaterial = () => {
@@ -795,10 +814,7 @@ const updateSurfer = (time: number, delta: number) => {
   const desiredVelocity = surferInputX * surferMaxSpeed;
   const easeRate = Math.abs(surferInputX) > 0 ? 5.6 : 7.8;
   surferVelocityX += (desiredVelocity - surferVelocityX) * (1 - Math.exp(-easeRate * delta));
-  surferX = THREE.MathUtils.clamp(surferX + surferVelocityX * delta, -surferLimitX, surferLimitX);
-  if ((surferX <= -surferLimitX && surferVelocityX < 0) || (surferX >= surferLimitX && surferVelocityX > 0)) {
-    surferVelocityX *= 0.18;
-  }
+  surferX += surferVelocityX * delta;
   const center = waveHeight(surferX, surferZ, time);
   const front = waveHeight(surferX, surferZ + 1, time);
   const back = waveHeight(surferX, surferZ - 0.9, time);
@@ -806,8 +822,14 @@ const updateSurfer = (time: number, delta: number) => {
   const right = waveHeight(surferX + 0.72, surferZ, time);
   const swell = (center * 2 + front + back + left + right) / 6;
   const crestLift = Math.max(0, center) * 0.42 + Math.max(0, front) * 0.24;
+  const surferY = surferScreenY + swell * 0.42 + crestLift * 0.34;
+  const frameLimitX = getSurferFrameLimit(surferY);
+  surferX = THREE.MathUtils.clamp(surferX, -frameLimitX, frameLimitX);
+  if ((surferX <= -frameLimitX && surferVelocityX < 0) || (surferX >= frameLimitX && surferVelocityX > 0)) {
+    surferVelocityX *= 0.18;
+  }
   const turn = THREE.MathUtils.clamp((surferVelocityX / surferMaxSpeed) * 0.85 + (right - left) * 0.12, -1, 1) * surferTurnMax;
-  surfer.position.set(surferX, surferScreenY + swell * 0.42 + crestLift * 0.34, surferZ);
+  surfer.position.set(surferX, surferY, surferZ);
   surfer.rotation.x = THREE.MathUtils.clamp((front - back) * 0.34 + (center - back) * 0.1, -0.58, 0.58);
   surfer.rotation.y = surferYaw + turn;
   surfer.rotation.z = THREE.MathUtils.clamp((right - left) * -0.28 + (surferVelocityX / surferMaxSpeed) * -0.24, -0.52, 0.52);
@@ -829,6 +851,8 @@ const resize = () => {
   if (!renderer || !camera || !mount.value) return;
   const widthPx = mount.value.clientWidth;
   const heightPx = mount.value.clientHeight;
+  activePortrait = heightPx > widthPx;
+  setCameraFrame();
   camera.aspect = widthPx / Math.max(heightPx, 1);
   camera.updateProjectionMatrix();
   renderer.setSize(widthPx, heightPx);
@@ -841,7 +865,7 @@ const setupScene = () => {
   scene.fog = new THREE.FogExp2(0x020403, 0.027);
 
   camera = new THREE.PerspectiveCamera(46, 1, 0.1, 180);
-  setCameraTilt();
+  setCameraFrame();
 
   renderer = new THREE.WebGLRenderer({ antialias: !lowPowerMode, alpha: false, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, lowPowerMode ? 0.85 : 1.5));
@@ -944,13 +968,13 @@ const handleControlInput = (key: NumericSettingKey) => {
     window.clearTimeout(densityRebuildTimer);
     densityRebuildTimer = window.setTimeout(createGrid, 180);
   }
-  if (key === 'cameraTilt') setCameraTilt();
+  if (key === 'cameraTilt') setCameraFrame();
   if (key === 'brightness') syncMaterial();
 };
 
 const resetControls = () => {
   Object.assign(settings, defaults);
-  setCameraTilt();
+  setCameraFrame();
   createGrid();
   syncMaterial();
 };

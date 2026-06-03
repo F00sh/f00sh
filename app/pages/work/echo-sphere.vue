@@ -1,13 +1,17 @@
-﻿<template>
-  <section class="relative h-screen h-[100svh] h-[100dvh] overflow-hidden">
+<template>
+  <section class="relative h-screen h-[100svh] h-[100dvh] overflow-hidden bg-neutral-950">
     <div class="pointer-events-none absolute inset-0 z-0 h-screen h-[100svh] h-[100dvh]">
       <EchoSphereScene />
     </div>
-    <div class="relative z-10 mx-auto w-[min(94%,76rem)] py-16">
-      <p class="font-ibm-plex-mono text-xs uppercase tracking-[0.24em] text-lime-300">Interactive 3D Application</p>
-      <h1 class="mt-4 font-space-grotesk text-[clamp(1.8rem,5vw,3.8rem)] leading-[0.96]">Echo Sphere</h1>
-      <p class="mt-5 max-w-3xl text-neutral-300">A high-density wireframe sphere that deforms in real-time from both music and microphone sound energy.</p>
-    </div>
+    <NuxtLink
+      to="/work/interactive-web"
+      class="absolute right-3 top-3 z-20 inline-flex h-11 w-11 items-center justify-center border border-white/12 bg-black/65 text-neutral-100 backdrop-blur-md transition-colors hover:border-lime-300 hover:text-lime-300 sm:right-4 sm:top-4"
+      aria-label="Close project"
+    >
+      <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <path d="M18 6 6 18M6 6l12 12" />
+      </svg>
+    </NuxtLink>
   </section>
 </template>
 
