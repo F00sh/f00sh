@@ -4,6 +4,61 @@
     <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(163,230,53,0.08),transparent_30%),linear-gradient(180deg,rgba(2,4,3,0.06),rgba(2,4,3,0.78))]" />
 
     <div class="relative z-10 flex min-h-screen flex-col px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+      <div class="fixed left-3 top-16 z-30 sm:left-4 sm:top-20 lg:left-6">
+        <button
+          type="button"
+          class="flex h-10 items-center gap-2 border border-white/10 bg-black/70 px-3 text-[0.64rem] font-bold uppercase tracking-[0.16em] text-neutral-100 backdrop-blur-md transition-colors hover:border-lime-300 hover:text-lime-300 sm:h-11 sm:px-4 sm:text-xs sm:tracking-[0.18em]"
+          :aria-expanded="controlsVisible"
+          aria-controls="wave-controls-menu"
+          @click="controlsVisible = !controlsVisible"
+        >
+          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <path d="M4 6H20M4 12H16M4 18H14" />
+          </svg>
+          <span>Controls</span>
+        </button>
+
+        <form
+          id="wave-controls-menu"
+          v-show="controlsVisible"
+          class="mt-2 w-[min(18rem,calc(100vw-1.5rem))] border border-white/10 bg-black/80 p-3 shadow-[0_16px_48px_rgba(0,0,0,0.32)] backdrop-blur-md sm:w-[19rem] sm:p-4"
+          @submit.prevent
+        >
+          <div class="mb-2 flex items-center justify-between gap-3 sm:mb-3">
+            <p class="text-[0.64rem] uppercase tracking-[0.2em] text-lime-300 sm:text-xs sm:tracking-[0.22em]">Wave Controls</p>
+            <button type="button" class="text-[0.64rem] uppercase tracking-[0.16em] text-neutral-400 hover:text-lime-300 sm:text-xs sm:tracking-[0.18em]" @click="resetControls">
+              Reset
+            </button>
+          </div>
+
+          <div class="compact-controls grid max-h-[min(60vh,28rem)] gap-2 overflow-y-auto pr-1 sm:gap-3 sm:pr-0">
+            <label v-for="control in numericControls" :key="control.key" class="grid gap-1 text-[0.64rem] uppercase tracking-[0.11em] text-neutral-300 sm:text-xs sm:tracking-[0.12em]">
+              <span class="flex justify-between gap-3">
+                {{ control.label }}
+                <span class="text-neutral-500">{{ formatControlValue(control.key) }}</span>
+              </span>
+              <input
+                v-model.number="settings[control.key]"
+                type="range"
+                :min="control.min"
+                :max="control.max"
+                :step="control.step"
+                class="sound-slider"
+                @input="handleControlInput(control.key)"
+              >
+            </label>
+
+            <label class="grid gap-1 text-[0.64rem] uppercase tracking-[0.11em] text-neutral-300 sm:text-xs sm:tracking-[0.12em]">
+              <span class="flex justify-between gap-3">
+                Color Tint
+                <span class="text-neutral-500">{{ settings.color }}</span>
+              </span>
+              <input v-model="settings.color" type="color" class="h-8 w-full border border-white/10 bg-black/50 sm:h-9" @input="syncMaterial">
+            </label>
+          </div>
+        </form>
+      </div>
+
       <div class="flex justify-center pt-3 sm:hidden">
         <h1 class="font-josefin text-[clamp(2.2rem,9vw,3.25rem)] leading-[0.92] text-neutral-50">Sound Surfer</h1>
       </div>
@@ -41,53 +96,19 @@
             Signal {{ Math.round(audioState.level * 100) }}%
           </div>
         </div>
-
-        <form class="w-full border border-white/10 bg-black/72 p-3 backdrop-blur-md sm:p-4 lg:w-[22rem]" @submit.prevent>
-          <div class="mb-2 flex items-center justify-between gap-3 sm:mb-3 sm:gap-4">
-            <p class="text-[0.64rem] uppercase tracking-[0.2em] text-lime-300 sm:text-xs sm:tracking-[0.22em]">Wave Controls</p>
-            <div class="flex items-center gap-2 sm:gap-3">
-              <button type="button" class="text-[0.64rem] uppercase tracking-[0.16em] text-neutral-400 hover:text-lime-300 sm:text-xs sm:tracking-[0.18em]" @click="controlsVisible = !controlsVisible">
-                {{ controlsVisible ? 'Hide' : 'Show' }}
-              </button>
-              <button type="button" class="text-[0.64rem] uppercase tracking-[0.16em] text-neutral-400 hover:text-lime-300 sm:text-xs sm:tracking-[0.18em]" @click="resetControls">Reset</button>
-            </div>
-          </div>
-
-          <div v-show="controlsVisible" class="compact-controls grid max-h-[38vh] gap-2 overflow-y-auto pr-1 sm:max-h-[28rem] sm:gap-3 sm:pr-0 lg:max-h-[32rem]">
-            <label v-for="control in numericControls" :key="control.key" class="grid gap-1 text-[0.64rem] uppercase tracking-[0.11em] text-neutral-300 sm:text-xs sm:tracking-[0.12em]">
-              <span class="flex justify-between gap-3">
-                {{ control.label }}
-                <span class="text-neutral-500">{{ formatControlValue(control.key) }}</span>
-              </span>
-              <input
-                v-model.number="settings[control.key]"
-                type="range"
-                :min="control.min"
-                :max="control.max"
-                :step="control.step"
-                class="sound-slider"
-                @input="handleControlInput(control.key)"
-              >
-            </label>
-
-            <label class="grid gap-1 text-[0.64rem] uppercase tracking-[0.11em] text-neutral-300 sm:text-xs sm:tracking-[0.12em]">
-              <span class="flex justify-between gap-3">
-                Color Tint
-                <span class="text-neutral-500">{{ settings.color }}</span>
-              </span>
-              <input v-model="settings.color" type="color" class="h-8 w-full border border-white/10 bg-black/50 sm:h-9" @input="syncMaterial">
-            </label>
-          </div>
-        </form>
       </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-// @ts-ignore: missing type declarations for three
+// Type issues with three and its examples in some environments — silence via ts-ignore
+// @ts-ignore: module missing or has implicit any
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+// @ts-ignore: module missing or has implicit any
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+// local fallback type for GLTF when typings are unavailable
+type GLTF = any;
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import surferModelUrl from '~/assets/3d/surfer.glb?url';
 
@@ -124,7 +145,7 @@ const mount = ref<HTMLElement | null>(null);
 const micActive = ref(false);
 const filePlaying = ref(false);
 const audioElement = ref<HTMLAudioElement | null>(null);
-const controlsVisible = ref(true);
+const controlsVisible = ref(false);
 
 const defaults: Settings = {
   baseAmplitude: 0.42,
@@ -132,9 +153,9 @@ const defaults: Settings = {
   speed: 1.15,
   frequency: 1,
   density: 64,
-  smoothing: 0.84,
-  cameraTilt: 31,
-  brightness: 0.86,
+  smoothing: 0.75,
+  cameraTilt: 29,
+  brightness: 0.85,
   color: '#baff70',
 };
 
@@ -147,9 +168,6 @@ const numericControls: NumericControl[] = [
   { key: 'speed', label: 'Wave speed', min: 0.15, max: 3.4, step: 0.05 },
   { key: 'frequency', label: 'Wave frequency', min: 0.35, max: 2.8, step: 0.05 },
   { key: 'density', label: 'Wire density', min: 24, max: 110, step: 2 },
-  { key: 'smoothing', label: 'Smoothing', min: 0.55, max: 0.96, step: 0.01 },
-  { key: 'cameraTilt', label: 'Camera tilt', min: 18, max: 48, step: 1 },
-  { key: 'brightness', label: 'Brightness', min: 0.18, max: 1.4, step: 0.01 },
 ];
 
 let renderer: THREE.WebGLRenderer | null = null;
@@ -159,9 +177,6 @@ let gridLines: THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial>
 let rowLines: THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial> | null = null;
 let voronoiLines: THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial> | null = null;
 let horizonLines: THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial> | null = null;
-let foamPoints: THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial> | null = null;
-let wakePoints: THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial> | null = null;
-let rippleLines: THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial> | null = null;
 let surfer: THREE.Group | null = null;
 let frameId = 0;
 let clock: THREE.Clock | null = null;
@@ -169,22 +184,6 @@ let lastFrameTime = 0;
 let basePositions: Float32Array | null = null;
 let rowBasePositions: Float32Array | null = null;
 let voronoiBasePositions: Float32Array | null = null;
-let foamBasePositions: Float32Array | null = null;
-let foamSeeds: Float32Array | null = null;
-let wakeBasePositions: Float32Array | null = null;
-let wakeAge: Float32Array | null = null;
-let wakeLife: Float32Array | null = null;
-let wakeVelocities: Float32Array | null = null;
-let wakeCursor = 0;
-let wakeSpawnTimer = 0;
-let rippleBasePositions: Float32Array | null = null;
-let rippleAge: Float32Array | null = null;
-let rippleLife: Float32Array | null = null;
-let rippleRadius: Float32Array | null = null;
-let rippleVelocityX: Float32Array | null = null;
-let rippleVelocityZ: Float32Array | null = null;
-let rippleCursor = 0;
-let rippleSpawnTimer = 0;
 let audioContext: AudioContext | null = null;
 let analyser: AnalyserNode | null = null;
 let freqData: Uint8Array | null = null;
@@ -205,19 +204,15 @@ let touchStartY = 0;
 const planeWidth = 42;
 const nearZ = 20;
 const farZ = -122;
-const foamStride = 3;
-const foamSeedStride = 5;
 const surferZ = 13.2;
 const surferLimitX = planeWidth * 0.32;
 const surferYaw = THREE.MathUtils.degToRad(90);
 const surferTurnMax = THREE.MathUtils.degToRad(24);
 const surferScreenY = 3.1;
 const surferMaxSpeed = 8.5;
-const surferForwardZ = -1;
-const wakeTrailSpeed = 5.6;
-const wakeLineLength = 1.15;
 const voronoiLift = 0.035;
-const surfaceDriftSpeed = 4.2;
+const rowDriftSpeed = 4.2;
+const voronoiDriftSpeed = 3.7;
 
 const getAudioContextCtor = () =>
   window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -228,10 +223,6 @@ const isLowPowerDevice = () => {
   return (typeof nav.deviceMemory === 'number' && nav.deviceMemory <= 4)
     || (typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency <= 4);
 };
-
-const wakeParticleCount = isLowPowerDevice() ? 120 : 180;
-const rippleCount = isLowPowerDevice() ? 8 : 12;
-const rippleSegments = isLowPowerDevice() ? 18 : 24;
 
 const targetDensity = computed(() => {
   const limit = isLowPowerDevice() ? 76 : 110;
@@ -373,15 +364,6 @@ const syncMaterial = () => {
     horizonLines.material.color.set(settings.color);
     horizonLines.material.opacity = Math.min(0.28, settings.brightness * 0.28);
   }
-  if (foamPoints) {
-    foamPoints.material.opacity = Math.min(0.62, settings.brightness * 0.46);
-  }
-  if (wakePoints) {
-    wakePoints.material.opacity = Math.min(0.92, settings.brightness * 0.78);
-  }
-  if (rippleLines) {
-    rippleLines.material.opacity = Math.min(0.5, settings.brightness * 0.42);
-  }
   if (surfer) {
     const surferMaterial = getSurferWireMaterial();
     surfer.traverse((child: THREE.Object3D) => {
@@ -389,92 +371,11 @@ const syncMaterial = () => {
       if (!mesh.material) return;
       if (mesh.material !== surferMaterial) {
         const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        materials.forEach((material) => material.dispose());
+        materials.forEach((material: THREE.Material) => material.dispose());
         mesh.material = surferMaterial;
       }
     });
   }
-};
-
-const createWake = () => {
-  if (!scene) return;
-  const positions = new Float32Array(wakeParticleCount * 2 * 3);
-  const colors = new Float32Array(wakeParticleCount * 2 * 3);
-  wakeBasePositions = new Float32Array(wakeParticleCount * 3);
-  wakeAge = new Float32Array(wakeParticleCount);
-  wakeLife = new Float32Array(wakeParticleCount);
-  wakeVelocities = new Float32Array(wakeParticleCount * 3);
-  for (let i = 0; i < wakeParticleCount; i += 1) {
-    const index = i * 3;
-    const lineIndex = i * 6;
-    positions[lineIndex] = 0;
-    positions[lineIndex + 1] = -80;
-    positions[lineIndex + 2] = 0;
-    positions[lineIndex + 3] = 0;
-    positions[lineIndex + 4] = -80;
-    positions[lineIndex + 5] = 0;
-    wakeBasePositions[index] = 0;
-    wakeBasePositions[index + 1] = -80;
-    wakeBasePositions[index + 2] = 0;
-    wakeAge[i] = 999;
-    wakeLife[i] = 1;
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  wakePoints = new THREE.LineSegments(
-    geometry,
-    new THREE.LineBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: Math.min(0.92, settings.brightness * 0.78),
-      vertexColors: true,
-      blending: THREE.AdditiveBlending,
-      depthTest: false,
-      depthWrite: false,
-    }),
-  );
-  wakePoints.renderOrder = 5;
-  scene.add(wakePoints);
-};
-
-const createRipple = () => {
-  if (!scene) return;
-  const positions = new Float32Array(rippleCount * rippleSegments * 2 * 3);
-  rippleBasePositions = new Float32Array(rippleCount * 3);
-  rippleAge = new Float32Array(rippleCount);
-  rippleLife = new Float32Array(rippleCount);
-  rippleRadius = new Float32Array(rippleCount);
-  rippleVelocityX = new Float32Array(rippleCount);
-  rippleVelocityZ = new Float32Array(rippleCount);
-
-  for (let i = 0; i < rippleCount; i += 1) {
-    const baseIndex = i * 3;
-    rippleBasePositions[baseIndex] = 0;
-    rippleBasePositions[baseIndex + 1] = -80;
-    rippleBasePositions[baseIndex + 2] = 0;
-    rippleAge[i] = 999;
-    rippleLife[i] = 1;
-    rippleRadius[i] = 0.1;
-    rippleVelocityX[i] = 0;
-    rippleVelocityZ[i] = 0;
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  rippleLines = new THREE.LineSegments(
-    geometry,
-    new THREE.LineBasicMaterial({
-      color: 0xf6ffe8,
-      transparent: true,
-      opacity: Math.min(0.5, settings.brightness * 0.42),
-      blending: THREE.AdditiveBlending,
-      depthTest: false,
-      depthWrite: false,
-    }),
-  );
-  rippleLines.renderOrder = 4;
-  scene.add(rippleLines);
 };
 
 const createSurfer = () => {
@@ -488,7 +389,7 @@ const createSurfer = () => {
 
   const loadToken = ++surferLoadToken;
   const loader = new GLTFLoader();
-  loader.load(surferModelUrl, (gltf) => {
+  loader.load(surferModelUrl, (gltf: GLTF) => {
     if (!surfer || surfer !== group || loadToken !== surferLoadToken) {
       disposeObject3D(gltf.scene);
       return;
@@ -524,7 +425,7 @@ const disposeObject3D = (object: THREE.Object3D) => {
     if (mesh.geometry) mesh.geometry.dispose();
     if (!mesh.material) return;
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    materials.forEach((material) => material.dispose());
+    materials.forEach((material: THREE.Material) => material.dispose());
   });
 };
 
@@ -547,49 +448,9 @@ const disposeGrid = () => {
     voronoiLines.material.dispose();
     voronoiLines = null;
   }
-  if (foamPoints && scene) {
-    scene.remove(foamPoints);
-    foamPoints.geometry.dispose();
-    foamPoints.material.dispose();
-    foamPoints = null;
-  }
   basePositions = null;
   rowBasePositions = null;
   voronoiBasePositions = null;
-  foamBasePositions = null;
-  foamSeeds = null;
-};
-
-const disposeWake = () => {
-  if (wakePoints && scene) {
-    scene.remove(wakePoints);
-    wakePoints.geometry.dispose();
-    wakePoints.material.dispose();
-    wakePoints = null;
-  }
-  wakeBasePositions = null;
-  wakeAge = null;
-  wakeLife = null;
-  wakeVelocities = null;
-  wakeCursor = 0;
-  wakeSpawnTimer = 0;
-};
-
-const disposeRipple = () => {
-  if (rippleLines && scene) {
-    scene.remove(rippleLines);
-    rippleLines.geometry.dispose();
-    rippleLines.material.dispose();
-    rippleLines = null;
-  }
-  rippleBasePositions = null;
-  rippleAge = null;
-  rippleLife = null;
-  rippleRadius = null;
-  rippleVelocityX = null;
-  rippleVelocityZ = null;
-  rippleCursor = 0;
-  rippleSpawnTimer = 0;
 };
 
 const disposeSurfer = () => {
@@ -798,52 +659,6 @@ const createGrid = () => {
   );
   voronoiLines.renderOrder = 3;
   scene.add(voronoiLines);
-
-  const foamColumns = isLowPowerDevice() ? 14 : 18;
-  const foamRows = isLowPowerDevice() ? 24 : 32;
-  const foamCount = foamColumns * foamRows;
-  const foamPositions = new Float32Array(foamCount * foamStride);
-  foamBasePositions = new Float32Array(foamCount * foamStride);
-  foamSeeds = new Float32Array(foamCount * foamSeedStride);
-  const travelLength = nearZ - farZ;
-  const cellWidth = (planeWidth * 0.92) / foamColumns;
-  const cellDepth = travelLength / foamRows;
-  for (let i = 0; i < foamCount; i += 1) {
-    const positionIndex = i * foamStride;
-    const seedIndex = i * foamSeedStride;
-    const column = i % foamColumns;
-    const row = Math.floor(i / foamColumns);
-    const x = -planeWidth * 0.46 + (column + 0.5 + THREE.MathUtils.randFloatSpread(0.72)) * cellWidth;
-    const z = nearZ - (row + 0.5 + THREE.MathUtils.randFloatSpread(0.72)) * cellDepth;
-    foamPositions[positionIndex] = x;
-    foamPositions[positionIndex + 1] = -80;
-    foamPositions[positionIndex + 2] = z;
-    foamBasePositions[positionIndex] = x;
-    foamBasePositions[positionIndex + 1] = 0;
-    foamBasePositions[positionIndex + 2] = z;
-    foamSeeds[seedIndex] = x;
-    foamSeeds[seedIndex + 1] = z;
-    foamSeeds[seedIndex + 2] = Math.random() * Math.PI * 2;
-    foamSeeds[seedIndex + 3] = THREE.MathUtils.randFloat(0.55, 1);
-    foamSeeds[seedIndex + 4] = THREE.MathUtils.randFloatSpread(1);
-  }
-  const foamGeometry = new THREE.BufferGeometry();
-  foamGeometry.setAttribute('position', new THREE.BufferAttribute(foamPositions, 3));
-  foamPoints = new THREE.Points(
-    foamGeometry,
-    new THREE.PointsMaterial({
-      color: 0xf6ffe8,
-      transparent: true,
-      opacity: Math.min(0.62, settings.brightness * 0.46),
-      size: isLowPowerDevice() ? 0.045 : 0.06,
-      sizeAttenuation: true,
-      blending: THREE.AdditiveBlending,
-      depthTest: false,
-      depthWrite: false,
-    }),
-  );
-  foamPoints.renderOrder = 4;
-  scene.add(foamPoints);
   syncMaterial();
 };
 
@@ -888,7 +703,7 @@ const updateGrid = (time: number) => {
     const attr = rowLines.geometry.getAttribute('position') as THREE.BufferAttribute;
     const positions = attr.array as Float32Array;
     const driftRange = nearZ - farZ;
-    const driftPhase = THREE.MathUtils.euclideanModulo(time * settings.speed * surfaceDriftSpeed, driftRange);
+    const driftPhase = THREE.MathUtils.euclideanModulo(time * settings.speed * rowDriftSpeed, driftRange);
     for (let i = 0; i < positions.length; i += 3) {
       const x = rowBasePositions[i]!;
       const z = rowBasePositions[i + 2]! - driftPhase;
@@ -903,7 +718,7 @@ const updateGrid = (time: number) => {
     const attr = voronoiLines.geometry.getAttribute('position') as THREE.BufferAttribute;
     const positions = attr.array as Float32Array;
     const driftRange = (nearZ - 4) - (farZ + 8);
-    const driftPhase = THREE.MathUtils.euclideanModulo(time * settings.speed * surfaceDriftSpeed, driftRange);
+    const driftPhase = THREE.MathUtils.euclideanModulo(time * settings.speed * voronoiDriftSpeed, driftRange);
     for (let i = 0; i < positions.length; i += 6) {
       const x0 = voronoiBasePositions[i]!;
       const z0 = voronoiBasePositions[i + 2]! - driftPhase;
@@ -921,230 +736,6 @@ const updateGrid = (time: number) => {
     }
     attr.needsUpdate = true;
   }
-};
-
-const updateFoam = (time: number) => {
-  if (!foamPoints || !foamSeeds || !foamBasePositions) return;
-  const attr = foamPoints.geometry.getAttribute('position') as THREE.BufferAttribute;
-  const positions = attr.array as Float32Array;
-  const travelLength = nearZ - farZ;
-  const speed = settings.speed;
-  const scatterWidth = planeWidth * 0.92;
-  const halfScatterWidth = scatterWidth * 0.5;
-  const scroll = time * speed * 9;
-
-  for (let i = 0; i < foamSeeds.length / foamSeedStride; i += 1) {
-    const positionIndex = i * foamStride;
-    const seedIndex = i * foamSeedStride;
-    const seedX = foamSeeds[seedIndex] ?? 0;
-    const seedZ = foamSeeds[seedIndex + 1] ?? 0;
-    const seedPhase = foamSeeds[seedIndex + 2] ?? 0;
-    const intensity = foamSeeds[seedIndex + 3] ?? 1;
-    const sideDrift = foamSeeds[seedIndex + 4] ?? 0;
-    const driftX = Math.sin(time * 0.38 + seedPhase) * 0.08 + sideDrift * 0.05;
-    const x = THREE.MathUtils.euclideanModulo(seedX + driftX + halfScatterWidth, scatterWidth) - halfScatterWidth;
-    const z = wrapDepth(seedZ + scroll);
-    const y = waveHeight(x, z, time);
-    const depthFade = THREE.MathUtils.clamp((nearZ - z) / travelLength, 0, 1);
-    const edgeFade = Math.sin(depthFade * Math.PI);
-    const glint = 0.5 + 0.5 * Math.sin(seedPhase + time * 1.8 + z * 0.09);
-    const lift = 0.018 + intensity * 0.018 + glint * 0.012;
-
-    positions[positionIndex] = x;
-    positions[positionIndex + 1] = edgeFade > 0.08 ? y + lift : -80;
-    positions[positionIndex + 2] = z;
-  }
-  attr.needsUpdate = true;
-};
-
-const spawnWakeParticle = (x: number, z: number, time: number, velocityX: number, velocityZ: number) => {
-  if (!wakePoints || !wakeBasePositions || !wakeAge || !wakeLife || !wakeVelocities) return;
-  const index = wakeCursor % wakeParticleCount;
-  wakeCursor += 1;
-  const baseIndex = index * 3;
-  const backwardZ = -surferForwardZ;
-  const trailBias = THREE.MathUtils.clamp(0.45 + Math.abs(velocityX) * 0.55 + Math.abs(velocityZ) * 0.08, 0.35, 1);
-  const scatter = THREE.MathUtils.randFloatSpread(0.48 + trailBias * 0.28);
-  const wakeX = x + scatter;
-  const wakeZ = z + backwardZ * THREE.MathUtils.randFloat(0.15, 0.52);
-  wakeBasePositions[baseIndex] = wakeX;
-  wakeBasePositions[baseIndex + 1] = 0.025;
-  wakeBasePositions[baseIndex + 2] = wakeZ;
-  wakeAge[index] = 0;
-  wakeLife[index] = 0.58 + Math.random() * 0.62;
-  wakeVelocities[baseIndex] = THREE.MathUtils.randFloatSpread(0.18) + velocityX * 0.16;
-  wakeVelocities[baseIndex + 1] = 0;
-  wakeVelocities[baseIndex + 2] = backwardZ * wakeTrailSpeed * (0.7 + trailBias * 0.42);
-};
-
-const spawnRipple = (x: number, z: number, time: number, velocityX: number, velocityZ: number) => {
-  if (!rippleLines || !rippleBasePositions || !rippleAge || !rippleLife || !rippleRadius || !rippleVelocityX || !rippleVelocityZ) return;
-  const index = rippleCursor % rippleCount;
-  rippleCursor += 1;
-  const baseIndex = index * 3;
-  const backwardZ = -surferForwardZ;
-  const speed = Math.hypot(velocityX, velocityZ);
-  const drift = THREE.MathUtils.clamp(0.18 + speed * 0.22, 0.14, 0.42);
-
-  rippleBasePositions[baseIndex] = x;
-  rippleBasePositions[baseIndex + 1] = waveHeight(x, z, time) + 0.02;
-  rippleBasePositions[baseIndex + 2] = z + backwardZ * 0.24;
-  rippleAge[index] = 0;
-  rippleLife[index] = 0.48 + Math.random() * 0.42;
-  rippleRadius[index] = 0.08 + speed * 0.02;
-  rippleVelocityX[index] = velocityX * 0.08 + THREE.MathUtils.randFloatSpread(0.028);
-  rippleVelocityZ[index] = backwardZ * drift;
-};
-
-const updateWake = (time: number, delta: number) => {
-  if (!wakePoints || !wakeBasePositions || !wakeAge || !wakeLife || !wakeVelocities || !surfer) return;
-  const attr = wakePoints.geometry.getAttribute('position');
-  const colorAttr = wakePoints.geometry.getAttribute('color');
-  if (!attr || !colorAttr) return;
-  const positions = attr.array as Float32Array;
-  const colors = colorAttr.array as Float32Array;
-  const wakeBasePositionsArr = wakeBasePositions;
-  const wakeAgeArr = wakeAge;
-  const wakeLifeArr = wakeLife;
-  const wakeVelocitiesArr = wakeVelocities;
-  const wakeColor = new THREE.Color(settings.color);
-  const motionX = surferVelocityX / surferMaxSpeed;
-  const speedBurst = THREE.MathUtils.clamp(0.48 + Math.abs(motionX) * 0.52, 0.35, 1);
-  wakeSpawnTimer += delta;
-  if (wakeSpawnTimer >= 0.024) {
-    const spawnCount = Math.max(1, Math.floor(wakeSpawnTimer / 0.024));
-    wakeSpawnTimer = 0;
-    for (let i = 0; i < spawnCount; i += 1) {
-      const offset = (i - (spawnCount - 1) * 0.5) * 0.16;
-      const wakeX = surfer.position.x + offset + THREE.MathUtils.randFloatSpread(0.16);
-      const wakeZ = surferZ - surferForwardZ * 0.72;
-      spawnWakeParticle(wakeX, wakeZ, time, motionX, 0);
-    }
-  }
-  rippleSpawnTimer += delta;
-  if (rippleSpawnTimer >= 0.11) {
-    const backwardZ = -surferForwardZ;
-    const railOffset = THREE.MathUtils.clamp(motionX * 0.28, -0.32, 0.32);
-    const rippleX = surfer.position.x + railOffset;
-    const rippleZ = surferZ + backwardZ * 0.92;
-    spawnRipple(rippleX, rippleZ, time, motionX, 0);
-    rippleSpawnTimer = 0;
-  }
-
-  for (let i = 0; i < wakeParticleCount; i += 1) {
-    const baseIndex = i * 3;
-    const lineIndex = i * 6;
-    const age = wakeAgeArr[i];
-    const life = wakeLifeArr[i];
-    if (age === undefined || life === undefined || age >= life) {
-      positions[lineIndex] = 0;
-      positions[lineIndex + 1] = -80;
-      positions[lineIndex + 2] = 0;
-      positions[lineIndex + 3] = 0;
-      positions[lineIndex + 4] = -80;
-      positions[lineIndex + 5] = 0;
-      for (let j = 0; j < 6; j += 1) colors[lineIndex + j] = 0;
-      continue;
-    }
-
-    const nextAge = age + delta;
-    wakeAgeArr[i] = nextAge;
-    const fade = 1 - (nextAge / life);
-    const baseX = wakeBasePositionsArr[baseIndex] ?? 0;
-    const baseY = wakeBasePositionsArr[baseIndex + 1] ?? 0;
-    const baseZ = wakeBasePositionsArr[baseIndex + 2] ?? 0;
-    const velX = wakeVelocitiesArr[baseIndex] ?? 0;
-    const velZ = wakeVelocitiesArr[baseIndex + 2] ?? 0;
-    const x = baseX + velX * nextAge;
-    const z = baseZ + velZ * nextAge;
-    const surface = waveHeight(x, z, time);
-    const speed = Math.hypot(velX, velZ) || 1;
-    const dirX = velX / speed;
-    const dirZ = velZ / speed;
-    const length = wakeLineLength * (0.5 + fade * 0.65);
-    const y = surface + baseY + fade * 0.035;
-    const tailX = x - dirX * length;
-    const tailZ = z - dirZ * length;
-    const tailY = waveHeight(tailX, tailZ, time) + baseY;
-    const headStrength = fade * Math.min(1.15, settings.brightness);
-    const tailStrength = fade * fade * 0.38 * Math.min(1.15, settings.brightness);
-
-    positions[lineIndex] = tailX;
-    positions[lineIndex + 1] = tailY;
-    positions[lineIndex + 2] = tailZ;
-    positions[lineIndex + 3] = x;
-    positions[lineIndex + 4] = y;
-    positions[lineIndex + 5] = z;
-
-    colors[lineIndex] = wakeColor.r * tailStrength;
-    colors[lineIndex + 1] = wakeColor.g * tailStrength;
-    colors[lineIndex + 2] = wakeColor.b * tailStrength;
-    colors[lineIndex + 3] = wakeColor.r * headStrength;
-    colors[lineIndex + 4] = wakeColor.g * headStrength;
-    colors[lineIndex + 5] = wakeColor.b * headStrength;
-  }
-  attr.needsUpdate = true;
-  colorAttr.needsUpdate = true;
-};
-
-const updateRipple = (time: number, delta: number) => {
-  if (!rippleLines || !rippleBasePositions || !rippleAge || !rippleLife || !rippleRadius || !rippleVelocityX || !rippleVelocityZ || !surfer) return;
-  const attr = rippleLines.geometry.getAttribute('position');
-  if (!attr) return;
-  const positions = attr.array as Float32Array;
-  const rippleBasePositionsArr = rippleBasePositions;
-  const rippleAgeArr = rippleAge;
-  const rippleLifeArr = rippleLife;
-  const rippleRadiusArr = rippleRadius;
-  const rippleVelocityXArr = rippleVelocityX;
-  const rippleVelocityZArr = rippleVelocityZ;
-  const motionX = surferVelocityX / surferMaxSpeed;
-
-  for (let i = 0; i < rippleCount; i += 1) {
-    const baseIndex = i * 3;
-    const lineIndex = i * rippleSegments * 2 * 3;
-    const age = rippleAgeArr[i];
-    const life = rippleLifeArr[i];
-    if (age === undefined || life === undefined || age >= life) {
-      for (let j = 0; j < rippleSegments * 2; j += 1) {
-        positions[lineIndex + j * 3] = 0;
-        positions[lineIndex + j * 3 + 1] = -80;
-        positions[lineIndex + j * 3 + 2] = 0;
-      }
-      continue;
-    }
-
-    const currentAge = age + delta;
-    rippleAgeArr[i] = currentAge;
-    const progress = currentAge / life;
-    const fade = 1 - progress;
-    const centerX = (rippleBasePositionsArr[baseIndex] ?? 0) + (rippleVelocityXArr[i] ?? 0) * currentAge;
-    const centerZ = (rippleBasePositionsArr[baseIndex + 2] ?? 0) + (rippleVelocityZArr[i] ?? 0) * currentAge;
-    const centerY = waveHeight(centerX, centerZ, time) + (rippleBasePositionsArr[baseIndex + 1] ?? 0);
-    const radius = (rippleRadiusArr[i] ?? 0) + progress * (2.2 + Math.abs(motionX) * 0.7);
-    const lift = fade * 0.06;
-
-    for (let j = 0; j < rippleSegments; j += 1) {
-      const angleA = (j / rippleSegments) * Math.PI * 2;
-      const angleB = ((j + 1) / rippleSegments) * Math.PI * 2;
-      const squashA = 0.78 + Math.abs(Math.cos(angleA)) * 0.18;
-      const squashB = 0.78 + Math.abs(Math.cos(angleB)) * 0.18;
-      const ax = centerX + Math.cos(angleA) * radius * squashA;
-      const az = centerZ + Math.sin(angleA) * radius;
-      const bx = centerX + Math.cos(angleB) * radius * squashB;
-      const bz = centerZ + Math.sin(angleB) * radius;
-      const ai = lineIndex + j * 6;
-      positions[ai] = ax;
-      positions[ai + 1] = waveHeight(ax, az, time) + lift;
-      positions[ai + 2] = az;
-      positions[ai + 3] = bx;
-      positions[ai + 4] = waveHeight(bx, bz, time) + lift;
-      positions[ai + 5] = bz;
-    }
-
-    positions[lineIndex + 1] = centerY;
-  }
-  attr.needsUpdate = true;
 };
 
 const syncSurferInput = () => {
@@ -1227,10 +818,7 @@ const render = () => {
   lastFrameTime = elapsed;
   updateAudioState();
   updateGrid(elapsed);
-  updateFoam(elapsed);
   updateSurfer(elapsed, Math.max(0.001, delta));
-  updateWake(elapsed, Math.max(0.001, delta));
-  updateRipple(elapsed, Math.max(0.001, delta));
   renderer.render(scene, camera);
   frameId = window.requestAnimationFrame(render);
 };
@@ -1261,8 +849,6 @@ const setupScene = () => {
   createHorizonLines();
   createGrid();
   createSurfer();
-  createWake();
-  createRipple();
   clock = new THREE.Clock();
   lastFrameTime = 0;
   resize();
@@ -1389,8 +975,6 @@ onBeforeUnmount(() => {
   window.clearTimeout(densityRebuildTimer);
   cleanupAudio();
   disposeSurfer();
-  disposeWake();
-  disposeRipple();
   disposeGrid();
   if (horizonLines && scene) {
     scene.remove(horizonLines);
