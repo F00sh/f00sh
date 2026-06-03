@@ -212,7 +212,7 @@ const surferScreenY = 3.1;
 const surferMaxSpeed = 8.5;
 const voronoiLift = 0.035;
 const rowDriftSpeed = 4.2;
-const voronoiDriftSpeed = 3.7;
+const voronoiDriftSpeed = 3.2;
 
 const getAudioContextCtor = () =>
   window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
