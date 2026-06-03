@@ -15,7 +15,7 @@
 const route = useRoute();
 const isHome = computed(() => route.path === '/');
 const isFullscreenWorkProject = computed(() =>
-  ['/work/echo-sphere', '/work/kinetic-sphere', '/work/sound-surfer'].includes(route.path)
+  ['/work/echo-sphere', '/work/kinetic-sphere', '/work/sound-surfer', '/work/rumpelstiltskin'].includes(route.path)
 );
 
 const mainClass = computed(() => {

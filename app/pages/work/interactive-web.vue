@@ -54,6 +54,12 @@ const projects = [
     title: 'Kinetic Sphere',
     text: 'Click-driven invisible wall collider pushes a sphere through endless procedural wireframe terrain.',
     link: '/work/kinetic-sphere'
+  },
+  {
+    category: 'Scrolling 3D Storybook',
+    title: 'Rumpelstiltskin',
+    text: 'A cinematic reading experience with a traveling Three.js camera, staged dioramas and scroll-driven story beats.',
+    link: '/work/rumpelstiltskin'
   }
 ];
 
