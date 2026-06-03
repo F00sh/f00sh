@@ -181,7 +181,8 @@ let mediaSource: MediaElementAudioSourceNode | null = null;
 let fileUrl: string | null = null;
 let densityRebuildTimer = 0;
 let surferLoadToken = 0;
-let surferWireMaterial: THREE.MeshStandardMaterial | null = null;
+let surferFillMaterial: THREE.MeshStandardMaterial | null = null;
+let surferWireMaterial: THREE.LineBasicMaterial | null = null;
 let surferX = 0;
 let surferVelocityX = 0;
 let surferInputX = 0;
@@ -206,7 +207,9 @@ const landscapeCameraY = 8.6;
 const portraitCameraY = 9.8;
 const landscapeCameraZ = 24;
 const portraitCameraZ = 28.5;
-const voronoiLift = 0.035;
+const rowLineColor = 0x4bb7ff;
+const voronoiLineColor = 0xffffff;
+const voronoiLift = -0.11;
 const rowDriftSpeed = 4.2;
 const voronoiDriftSpeed = 3.2;
 const surferModelUrl = '/assets/3d/surfer.glb';
@@ -295,6 +298,18 @@ const surfShape = (phase: number) => {
   return trough * 0.46 + crest * 0.68 + crest * crest * crest * 1.28;
 };
 
+const smoothstep = (edge0: number, edge1: number, x: number) => {
+  const t = THREE.MathUtils.clamp((x - edge0) / Math.max(0.0001, edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+};
+
+const travelingEnvelope = (depthT: number, time: number, speed: number, width: number, offset = 0) => {
+  const center = 1 - THREE.MathUtils.euclideanModulo(time * speed + offset, 1);
+  const distance = Math.abs(depthT - center);
+  const wrappedDistance = Math.min(distance, 1 - distance);
+  return 1 - smoothstep(0, width, wrappedDistance);
+};
+
 const wrapDepth = (z: number) => {
   const rowTileLength = nearZ - farZ;
   const wrapped = ((nearZ - z) % rowTileLength + rowTileLength) % rowTileLength;
@@ -307,9 +322,13 @@ const waveHeight = (x: number, z: number, time: number) => {
   const scrollZ = z - time * speed * 9;
   const base = settings.baseAmplitude;
   const audioBoost = settings.audioInfluence;
-  const lowSwell = audioState.low * audioBoost;
-  const midDetail = audioState.mid * audioBoost;
-  const highRipple = audioState.high * audioBoost;
+  const depthT = THREE.MathUtils.clamp((nearZ - z) / (nearZ - farZ), 0, 1);
+  const lowTravel = travelingEnvelope(depthT, time, 0.16 + speed * 0.015, 0.16, 0.05);
+  const midTravel = travelingEnvelope(depthT, time, 0.21 + speed * 0.02, 0.12, 0.31);
+  const highTravel = travelingEnvelope(depthT, time, 0.27 + speed * 0.025, 0.08, 0.58);
+  const lowSwell = audioState.low * audioBoost * lowTravel;
+  const midDetail = audioState.mid * audioBoost * midTravel;
+  const highRipple = audioState.high * audioBoost * highTravel;
 
   const longFace = surfShape(x * 0.12 * frequency + scrollZ * 0.22 * frequency) * (base * 0.88 + lowSwell * 0.9);
   const peelingLip = surfShape(scrollZ * 0.34 * frequency + Math.sin(x * 0.13) * 1.2) * (base * 0.5 + lowSwell * 0.44);
@@ -348,21 +367,43 @@ const getSurferFrameLimit = (y: number) => {
   return Math.max(3, low - 0.25);
 };
 
+const getSurferFillMaterial = () => {
+  if (!surferFillMaterial) {
+    surferFillMaterial = new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      transparent: false,
+      opacity: 1,
+      depthTest: true,
+      depthWrite: true,
+      side: THREE.DoubleSide,
+      alphaTest: 0,
+      toneMapped: false,
+      blending: THREE.NormalBlending,
+    });
+  }
+  surferFillMaterial.color.set(0x000000);
+  surferFillMaterial.transparent = false;
+  surferFillMaterial.opacity = 1;
+  surferFillMaterial.depthTest = true;
+  surferFillMaterial.depthWrite = true;
+  surferFillMaterial.side = THREE.DoubleSide;
+  surferFillMaterial.alphaTest = 0;
+  surferFillMaterial.toneMapped = false;
+  surferFillMaterial.blending = THREE.NormalBlending;
+  return surferFillMaterial;
+};
+
 const getSurferWireMaterial = () => {
   if (!surferWireMaterial) {
-    surferWireMaterial = new THREE.MeshStandardMaterial({
+    surferWireMaterial = new THREE.LineBasicMaterial({
       color: 0xb86cff,
-      emissive: 0x8f42ff,
-      emissiveIntensity: 1.9,
-      wireframe: true,
       transparent: true,
-      opacity: Math.min(1, settings.brightness),
+      opacity: Math.min(1, settings.brightness * 0.96),
       depthTest: false,
       depthWrite: false,
     });
   }
-  surferWireMaterial.opacity = Math.min(1, settings.brightness);
-  surferWireMaterial.emissiveIntensity = 1.15 + settings.brightness * 0.85;
+  surferWireMaterial.opacity = Math.min(1, settings.brightness * 0.96);
   return surferWireMaterial;
 };
 
@@ -373,12 +414,12 @@ const syncMaterial = () => {
     gridLines.visible = false;
   }
   if (rowLines) {
-    rowLines.material.color.set(settings.color);
+    rowLines.material.color.set(rowLineColor);
     rowLines.material.opacity = Math.min(1, settings.brightness * 1.08);
     rowLines.visible = true;
   }
   if (voronoiLines) {
-    voronoiLines.material.color.set(settings.color);
+    voronoiLines.material.color.set(voronoiLineColor);
     voronoiLines.material.opacity = Math.min(0.5, settings.brightness * 0.42);
   }
   if (horizonLines) {
@@ -386,15 +427,32 @@ const syncMaterial = () => {
     horizonLines.material.opacity = Math.min(0.28, settings.brightness * 0.28);
   }
   if (surfer) {
+    const surferFill = getSurferFillMaterial();
     const surferMaterial = getSurferWireMaterial();
     surfer.traverse((child: THREE.Object3D) => {
       const mesh = child as THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
-      if (!mesh.material) return;
-      if (mesh.material !== surferMaterial) {
+      if (!mesh.isMesh || !mesh.material) return;
+      if (mesh.material !== surferFill) {
         const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
         materials.forEach((material: THREE.Material) => material.dispose());
-        mesh.material = surferMaterial;
+        mesh.material = surferFill;
+        mesh.material.needsUpdate = true;
+        mesh.material.transparent = false;
+        mesh.material.opacity = 1;
+        mesh.material.depthTest = true;
+        mesh.material.depthWrite = true;
+        mesh.material.side = THREE.DoubleSide;
       }
+      if (!mesh.getObjectByName('surfer-wireframe')) {
+        const wireframe = new THREE.LineSegments(
+          new THREE.WireframeGeometry(mesh.geometry),
+          surferMaterial,
+        );
+        wireframe.name = 'surfer-wireframe';
+        wireframe.renderOrder = 7;
+        mesh.add(wireframe);
+      }
+      mesh.renderOrder = 6;
     });
   }
 };
@@ -479,6 +537,7 @@ const disposeSurfer = () => {
   surferLoadToken += 1;
   scene.remove(surfer);
   disposeObject3D(surfer);
+  surferFillMaterial = null;
   surferWireMaterial = null;
   surfer = null;
 };
@@ -564,7 +623,7 @@ const createGrid = () => {
   rowLines = new THREE.LineSegments(
     rowGeometry,
     new THREE.LineBasicMaterial({
-      color: settings.color,
+      color: rowLineColor,
       transparent: true,
       opacity: Math.min(1, settings.brightness * 1.08),
       blending: THREE.AdditiveBlending,
@@ -670,7 +729,7 @@ const createGrid = () => {
   voronoiLines = new THREE.LineSegments(
     voronoiGeometry,
     new THREE.LineBasicMaterial({
-      color: settings.color,
+      color: voronoiLineColor,
       transparent: true,
       opacity: Math.min(0.5, settings.brightness * 0.42),
       blending: THREE.AdditiveBlending,
@@ -749,10 +808,10 @@ const updateGrid = (time: number) => {
       const fade1 = THREE.MathUtils.clamp((nearZ - z1) / (nearZ - farZ), 0, 1);
 
       positions[i] = x0;
-      positions[i + 1] = waveHeight(x0, z0, time) * (1 - fade0 * 0.18) + voronoiLift;
+      positions[i + 1] = waveHeight(x0, z0, time) * 0.5 * (1 - fade0 * 0.18) + voronoiLift;
       positions[i + 2] = z0;
       positions[i + 3] = x1;
-      positions[i + 4] = waveHeight(x1, z1, time) * (1 - fade1 * 0.18) + voronoiLift;
+      positions[i + 4] = waveHeight(x1, z1, time) * 0.5 * (1 - fade1 * 0.18) + voronoiLift;
       positions[i + 5] = z1;
     }
     attr.needsUpdate = true;
