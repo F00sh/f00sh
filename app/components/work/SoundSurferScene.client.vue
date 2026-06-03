@@ -21,7 +21,7 @@
         <form
           id="wave-controls-menu"
           v-show="controlsVisible"
-          class="mt-2 w-[min(18rem,calc(100vw-1.5rem))] border border-white/10 bg-black/80 p-3 shadow-[0_16px_48px_rgba(0,0,0,0.32)] backdrop-blur-md sm:w-[19rem] sm:p-4"
+          class="mt-2 w-[min(18rem,calc(100vw-1.5rem))] border border-white/10 bg-black/80 p-3 shadow-[0_16px_48px_rgba(0,0,0,0.32)] backdrop-blur-md sm:w-76 sm:p-4"
           @submit.prevent
         >
           <div class="mb-2 flex items-center justify-between gap-3 sm:mb-3">
@@ -224,8 +224,10 @@ const isLowPowerDevice = () => {
     || (typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency <= 4);
 };
 
+const lowPowerMode = isLowPowerDevice();
+
 const targetDensity = computed(() => {
-  const limit = isLowPowerDevice() ? 76 : 110;
+  const limit = lowPowerMode ? 56 : 110;
   return Math.max(16, Math.min(limit, Math.round(settings.density)));
 });
 
@@ -555,8 +557,8 @@ const createGrid = () => {
   scene.add(rowLines);
 
   // Build a jittered Voronoi overlay in x/z space and let waveHeight animate it above the sea.
-  const voronoiColumns = isLowPowerDevice() ? 28 : 36;
-  const voronoiRows = isLowPowerDevice() ? 44 : 56;
+  const voronoiColumns = lowPowerMode ? 20 : 36;
+  const voronoiRows = lowPowerMode ? 32 : 56;
   const voronoiBounds = {
     minX: -planeWidth * 0.48,
     maxX: planeWidth * 0.48,
@@ -841,8 +843,8 @@ const setupScene = () => {
   camera = new THREE.PerspectiveCamera(46, 1, 0.1, 180);
   setCameraTilt();
 
-  renderer = new THREE.WebGLRenderer({ antialias: !isLowPowerDevice(), alpha: false, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, isLowPowerDevice() ? 1 : 1.5));
+  renderer = new THREE.WebGLRenderer({ antialias: !lowPowerMode, alpha: false, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, lowPowerMode ? 0.85 : 1.5));
   mount.value.appendChild(renderer.domElement);
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.24));
