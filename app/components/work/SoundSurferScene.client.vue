@@ -110,7 +110,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 // local fallback type for GLTF when typings are unavailable
 type GLTF = any;
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
-import surferModelUrl from '../../assets/3d/surfer.glb?url';
 
 type AudioBands = {
   level: number;
@@ -213,6 +212,7 @@ const surferMaxSpeed = 8.5;
 const voronoiLift = 0.035;
 const rowDriftSpeed = 4.2;
 const voronoiDriftSpeed = 3.2;
+const surferModelUrl = '/assets/3d/surfer.glb';
 
 const getAudioContextCtor = () =>
   window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
