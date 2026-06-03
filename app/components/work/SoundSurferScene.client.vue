@@ -1,13 +1,13 @@
 <template>
   <section class="relative min-h-screen overflow-hidden bg-[#020403] text-neutral-50">
-    <div ref="mount" class="absolute inset-0" aria-hidden="true" />
+    <div ref="mount" class="pointer-events-none absolute inset-0" aria-hidden="true" />
     <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(163,230,53,0.08),transparent_30%),linear-gradient(180deg,rgba(2,4,3,0.06),rgba(2,4,3,0.78))]" />
 
     <div class="relative z-10 flex min-h-screen flex-col px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
-      <div class="fixed left-3 top-16 z-30 sm:left-4 sm:top-20 lg:left-6">
+      <div class="fixed left-3 top-3 z-30 pointer-events-auto sm:left-4 sm:top-4 lg:left-6 lg:top-6">
         <button
           type="button"
-          class="flex h-10 items-center gap-2 border border-white/10 bg-black/70 px-3 text-[0.64rem] font-bold uppercase tracking-[0.16em] text-neutral-100 backdrop-blur-md transition-colors hover:border-lime-300 hover:text-lime-300 sm:h-11 sm:px-4 sm:text-xs sm:tracking-[0.18em]"
+          class="pointer-events-auto flex h-10 items-center gap-2 border border-white/10 bg-black/70 px-3 text-[0.64rem] font-bold uppercase tracking-[0.16em] text-neutral-100 backdrop-blur-md transition-colors hover:border-lime-300 hover:text-lime-300 sm:h-11 sm:px-4 sm:text-xs sm:tracking-[0.18em]"
           :aria-expanded="controlsVisible"
           aria-controls="wave-controls-menu"
           @click="controlsVisible = !controlsVisible"
@@ -21,7 +21,7 @@
         <form
           id="wave-controls-menu"
           v-show="controlsVisible"
-          class="mt-2 w-[min(18rem,calc(100vw-1.5rem))] border border-white/10 bg-black/80 p-3 shadow-[0_16px_48px_rgba(0,0,0,0.32)] backdrop-blur-md sm:w-76 sm:p-4"
+          class="pointer-events-auto mt-2 w-[min(18rem,calc(100vw-1.5rem))] border border-white/10 bg-black/80 p-3 shadow-[0_16px_48px_rgba(0,0,0,0.32)] backdrop-blur-md sm:w-76 sm:p-4"
           @submit.prevent
         >
           <div class="mb-2 flex items-center justify-between gap-3 sm:mb-3">
@@ -194,11 +194,11 @@ let activePortrait = false;
 const planeWidth = 42;
 const nearZ = 20;
 const farZ = -122;
-const surferZ = 13.2;
+const surferZ = 16.2;
 const surferFrameMargin = 0.9;
 const surferYaw = THREE.MathUtils.degToRad(90);
 const surferTurnMax = THREE.MathUtils.degToRad(24);
-const surferScreenY = 3.1;
+const surferScreenY = 2.55;
 const surferMaxSpeed = 8.5;
 const landscapeCameraFov = 46;
 const portraitCameraFov = 53;
