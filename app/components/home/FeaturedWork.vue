@@ -1,0 +1,1 @@
+<template><section class="page-shell"><h2 class="page-title max-w-4xl">Selected Work</h2><p class="page-intro">Interactive websites, product visualization, and motion-led visuals built with Nuxt and Three.js.</p><NuxtLink to="/work" class="mt-6 inline-block text-xs uppercase tracking-[0.22em] text-lime-300 sm:mt-8">Explore all projects</NuxtLink></section></template>

@@ -1,0 +1,1 @@
+<template><section class="page-shell"><h2 class="page-title max-w-4xl">About FOOSH</h2><p class="page-intro">Product design, 3D, animation and web development connected through visual thinking and practical delivery.</p><NuxtLink to="/about" class="mt-6 inline-block text-xs uppercase tracking-[0.22em] text-lime-300 sm:mt-8">Read about FOOSH</NuxtLink></section></template>
