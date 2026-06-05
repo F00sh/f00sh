@@ -9,8 +9,10 @@
 
 <script setup lang="ts">
 import HeroScene from "~/components/three/HeroScene.client.vue";
-import ProjectDetailView from "~/components/portfolio/ProjectDetailView.vue";
-import { portfolioProjectById } from "~/data/portfolioProjects";
+import SiteFooter from "~/components/layout/SiteFooter.vue";
+import SiteHeader from "~/components/layout/SiteHeader.vue";
+import ProjectDetailView from "~/features/portfolio/components/ProjectDetailView.vue";
+import { portfolioProjectById } from "~/features/portfolio/data/portfolioProjects";
 
 const route = useRoute();
 const projectId = String(route.params.id || "");

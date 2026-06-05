@@ -50,7 +50,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue"
-import BackgroundCarousel from "~/components/BackgroundCarousel.vue"
+import BackgroundCarousel from "~/features/home/components/BackgroundCarousel.vue"
 
 const bgSlides = [
   { src: "/img/bg/ap_fin_all_1.png", alt: "Background 1" },

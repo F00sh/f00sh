@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import EchoSphereScene from '~/components/work/EchoSphereScene.client.vue';
+import EchoSphereScene from '~/features/work/components/EchoSphereScene.client.vue';
 
 useSeoMeta({
   title: 'Echo Sphere — FOOSH Interactive 3D Application',

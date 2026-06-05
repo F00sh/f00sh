@@ -11,10 +11,10 @@
 <script setup lang="ts">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { imageFileToHeightData } from '~/utils/topography/heightmap';
-import { marchingSquares } from '~/utils/topography/marchingSquares';
-import { generateTerrain, smoothTerrain, type HeightData } from '~/utils/topography/terrain';
-import type { TopographySettings } from '~/utils/topography/types';
+import { imageFileToHeightData } from '~/features/topography/utils/heightmap';
+import { marchingSquares } from '~/features/topography/utils/marchingSquares';
+import { generateTerrain, smoothTerrain, type HeightData } from '~/features/topography/utils/terrain';
+import type { TopographySettings } from '~/features/topography/utils/types';
 
 const props = withDefaults(defineProps<{ settings: TopographySettings; showUi?: boolean }>(), {
   showUi: true,

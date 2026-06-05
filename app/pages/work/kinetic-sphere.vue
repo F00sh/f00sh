@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import KineticSphereScene from '~/components/work/KineticSphereScene.client.vue';
+import KineticSphereScene from '~/features/work/components/KineticSphereScene.client.vue';
 
 useSeoMeta({
   title: 'Kinetic Sphere — FOOSH Interactive 3D Game',

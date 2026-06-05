@@ -9,6 +9,9 @@
 
 <script setup lang="ts">
 import HeroScene from "~/components/three/HeroScene.client.vue";
+import SiteFooter from "~/components/layout/SiteFooter.vue";
+import SiteHeader from "~/components/layout/SiteHeader.vue";
+import PortfolioGrid from "~/features/portfolio/components/PortfolioGrid.vue";
 
 useHead({
   title: "f00sh — portfolio",

@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import ScrollOnePager from '~/components/home/ScrollOnePager.vue';
+import ScrollOnePager from '~/features/home/components/ScrollOnePager.vue';
 
 useSeoMeta({
   title: 'FOOSH — 3D Modeling, Animation & Interactive Web Design',

@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import type { PortfolioProject } from "~/data/portfolioProjects";
+import type { PortfolioProject } from "~/features/portfolio/data/portfolioProjects";
 
 defineProps<{
   project: PortfolioProject;

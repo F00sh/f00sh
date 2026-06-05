@@ -1,6 +1,26 @@
-# Nuxt Minimal Starter
+# FOOSH
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+## Application Structure
+
+```text
+app/
+  assets/                 Global CSS, images, and audio
+  components/
+    layout/               Site-wide header and footer
+    three/                Reusable Three.js scenes
+    ui/                   Reusable interface components
+  composables/            Shared application composables
+  features/
+    home/                 Home-page components and data
+    portfolio/            Portfolio components and data
+    story/                Story components, composables, and data
+    topography/           Topography components and utilities
+    work/                 Interactive work scenes
+  layouts/                Nuxt layouts
+  pages/                  URL and route structure
+```
+
+Route files stay small and import their implementation from the matching feature folder. Shared code belongs in `components/` or `composables/`.
 
 ## Setup
 

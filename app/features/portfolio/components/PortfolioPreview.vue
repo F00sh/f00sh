@@ -134,7 +134,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { portfolioProjects, type PortfolioProject } from '~/data/portfolioProjects'
+import { portfolioProjects, type PortfolioProject } from '~/features/portfolio/data/portfolioProjects'
 
 const props = defineProps<{
   limit?: number

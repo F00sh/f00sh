@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { StorySectionData, StoryVector } from '~/data/rumpelstiltskin';
+import type { StorySectionData, StoryVector } from '~/features/story/data/rumpelstiltskin';
 
 export interface StoryWorld {
   curve: THREE.CatmullRomCurve3;

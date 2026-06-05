@@ -9,8 +9,8 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import type { StorySectionData } from '~/data/rumpelstiltskin';
-import { createStoryWorld, sampleStoryCamera } from '~/composables/useStoryCamera';
+import type { StorySectionData } from '~/features/story/data/rumpelstiltskin';
+import { createStoryWorld, sampleStoryCamera } from '~/features/story/composables/useStoryCamera';
 
 type AnimationState = {
   elapsed: number;

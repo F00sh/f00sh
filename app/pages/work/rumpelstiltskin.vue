@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import StoryExperience from '~/components/story/StoryExperience.vue';
+import StoryExperience from '~/features/story/components/StoryExperience.vue';
 
 useSeoMeta({
   title: 'Rumpelstiltskin - FOOSH Interactive Storybook',

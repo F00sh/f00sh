@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import type { PortfolioProject } from "~/data/portfolioProjects";
+import type { PortfolioProject } from "~/features/portfolio/data/portfolioProjects";
 import { usePrefersReducedMotion } from "~/composables/usePrefersReducedMotion";
 import { useGsap } from "~/composables/useGsap";
 

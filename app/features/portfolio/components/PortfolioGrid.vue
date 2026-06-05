@@ -136,7 +136,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import { portfolioProjects, type PortfolioProject } from "~/data/portfolioProjects";
+import { portfolioProjects, type PortfolioProject } from "~/features/portfolio/data/portfolioProjects";
 import { useAnime } from "~/composables/useAnime";
 import { usePrefersReducedMotion } from "~/composables/usePrefersReducedMotion";
 

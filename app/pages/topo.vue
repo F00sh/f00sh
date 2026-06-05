@@ -24,9 +24,9 @@
 </template>
 
 <script setup lang="ts">
-import TopographyControls from '~/components/topography/TopographyControls.vue';
-import TopographyScene from '~/components/topography/TopographyScene.client.vue';
-import type { TopographySettings } from '~/utils/topography/types';
+import TopographyControls from '~/features/topography/components/TopographyControls.vue';
+import TopographyScene from '~/features/topography/components/TopographyScene.client.vue';
+import type { TopographySettings } from '~/features/topography/utils/types';
 
 const scene = ref<InstanceType<typeof TopographyScene> | null>(null);
 const showUi = ref(true);

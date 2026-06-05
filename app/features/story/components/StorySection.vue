@@ -20,7 +20,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { StorySectionData } from '~/data/rumpelstiltskin';
+import StoryTextCard from '~/features/story/components/StoryTextCard.vue';
+import type { StorySectionData } from '~/features/story/data/rumpelstiltskin';
 
 const props = defineProps<{
   active: boolean;

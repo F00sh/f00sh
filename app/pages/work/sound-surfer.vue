@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import SoundSurferScene from '~/components/work/SoundSurferScene.client.vue';
+import SoundSurferScene from '~/features/work/components/SoundSurferScene.client.vue';
 
 useSeoMeta({
   title: 'Sound Surfer - FOOSH Interactive Audio Experience',

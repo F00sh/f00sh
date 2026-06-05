@@ -25,7 +25,7 @@
 
 <script setup lang="ts">
 import { defineAsyncComponent, onMounted, ref } from 'vue';
-import PageHero from '~/components/shared/PageHero.vue';
+import PageHero from '~/components/ui/PageHero.vue';
 import { useGsap } from '~/composables/useGsap';
 import { usePrefersReducedMotion } from '~/composables/usePrefersReducedMotion';
 

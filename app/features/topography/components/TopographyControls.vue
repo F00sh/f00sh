@@ -90,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import type { TopographyMode, TopographySettings } from '~/utils/topography/types';
+import type { TopographyMode, TopographySettings } from '~/features/topography/utils/types';
 
 const props = defineProps<{ settings: TopographySettings; status?: string }>();
 const emit = defineEmits<{

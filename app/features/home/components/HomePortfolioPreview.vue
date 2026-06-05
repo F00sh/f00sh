@@ -44,5 +44,5 @@
 </template>
 
 <script setup lang="ts">
-import { homeProjects } from "~/data/projects";
+import { homeProjects } from "~/features/home/data/projects";
 </script>

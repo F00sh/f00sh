@@ -1,7 +1,7 @@
 ﻿<template><PageHero :scene="AboutScene" eyebrow="About" title="Product design, 3D, animation and web connected through visual thinking." intro="FOOSH is the creative work of Marko Vilipić, combining product design experience, 3D visualization, animation, and interactive Nuxt development."><ul class="mt-8 grid gap-3 text-neutral-200 md:grid-cols-2"><li v-for="capability in capabilities" :key="capability" data-card class="border border-white/10 p-4">{{ capability }}</li></ul></PageHero></template>
 <script setup lang="ts">
 import { defineAsyncComponent, onMounted } from 'vue';
-import PageHero from '~/components/shared/PageHero.vue';
+import PageHero from '~/components/ui/PageHero.vue';
 import { useGsap } from '~/composables/useGsap';
 import { usePrefersReducedMotion } from '~/composables/usePrefersReducedMotion';
 const AboutScene = defineAsyncComponent(() => import('~/components/three/AboutScene.client.vue'));

@@ -12,6 +12,9 @@
 </template>
 
 <script setup lang="ts">
+import SiteFooter from '~/components/layout/SiteFooter.vue';
+import SiteHeader from '~/components/layout/SiteHeader.vue';
+
 const route = useRoute();
 const isHome = computed(() => route.path === '/');
 const isScrollableFullscreenProject = computed(() => route.path === '/work/rumpelstiltskin');

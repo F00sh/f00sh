@@ -67,10 +67,10 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted } from 'vue';
-import StoryCanvas from '~/components/story/StoryCanvas.vue';
-import StorySection from '~/components/story/StorySection.vue';
-import { useScrollProgress } from '~/composables/useScrollProgress';
-import { rumpelstiltskinSections } from '~/data/rumpelstiltskin';
+import StoryCanvas from '~/features/story/components/StoryCanvas.vue';
+import StorySection from '~/features/story/components/StorySection.vue';
+import { useScrollProgress } from '~/features/story/composables/useScrollProgress';
+import { rumpelstiltskinSections } from '~/features/story/data/rumpelstiltskin';
 
 const sections = rumpelstiltskinSections;
 const sectionIds = sections.map((section) => section.id);
