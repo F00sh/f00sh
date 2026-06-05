@@ -38,6 +38,12 @@ useSeoMeta({
 
 const projects = [
   {
+    category: 'Procedural WebGL Tool',
+    title: 'TOPO',
+    text: 'A procedural and heightmap-driven cartography tool that turns elevation data into layered wireframe terrain.',
+    link: '/topo'
+  },
+  {
     category: 'Interactive 3D Application',
     title: 'Echo Sphere',
     text: 'Audio-reactive wireframe ico sphere with realtime deformation, particles and mic input.',
