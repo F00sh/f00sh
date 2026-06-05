@@ -994,4 +994,35 @@ onBeforeUnmount(() => {
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
+
+@media (orientation: landscape) and (max-height: 640px) and (max-width: 1024px) {
+  .scroll-panel {
+    padding: max(3.25rem, env(safe-area-inset-top)) max(1.25rem, env(safe-area-inset-right)) max(1.25rem, env(safe-area-inset-bottom)) max(1.25rem, env(safe-area-inset-left));
+  }
+
+  .scroll-panel h1,
+  .scroll-panel h2 {
+    max-width: 46rem;
+    margin-top: 0.45rem;
+    font-size: clamp(1.55rem, 6.8vh, 2.35rem);
+    line-height: 1;
+  }
+
+  .scroll-panel h1 + p,
+  .scroll-panel h2 + p {
+    max-width: 42rem;
+    margin-top: 0.65rem;
+    font-size: clamp(0.78rem, 2.7vh, 0.95rem);
+    line-height: 1.35;
+  }
+
+  .scroll-panel p + div {
+    margin-top: 0.75rem;
+  }
+
+  .scroll-panel a {
+    padding: 0.6rem 1rem;
+    font-size: 0.62rem;
+  }
+}
 </style>

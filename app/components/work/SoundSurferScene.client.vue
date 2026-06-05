@@ -4,7 +4,7 @@
     <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(163,230,53,0.08),transparent_30%),linear-gradient(180deg,rgba(2,4,3,0.06),rgba(2,4,3,0.78))]" />
 
     <div class="relative z-10 flex min-h-screen flex-col px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
-      <div class="fixed left-3 top-3 z-30 pointer-events-auto sm:left-4 sm:top-4 lg:left-6 lg:top-6">
+      <div class="sound-controls fixed left-3 top-3 z-30 pointer-events-auto sm:left-4 sm:top-4 lg:left-6 lg:top-6">
         <button
           type="button"
           class="pointer-events-auto flex h-10 items-center gap-2 border border-white/10 bg-black/70 px-3 text-[0.64rem] font-bold uppercase tracking-[0.16em] text-neutral-100 backdrop-blur-md transition-colors hover:border-lime-300 hover:text-lime-300 sm:h-11 sm:px-4 sm:text-xs sm:tracking-[0.18em]"

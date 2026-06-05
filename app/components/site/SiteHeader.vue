@@ -1,9 +1,9 @@
 <template>
   <header
-    class="fixed inset-x-0 top-0 z-50 bg-neutral-950/85 backdrop-blur transition-transform duration-300"
+    class="site-header fixed inset-x-0 top-0 z-50 bg-neutral-950/85 backdrop-blur transition-transform duration-300"
     :class="headerHidden ? '-translate-y-full' : 'translate-y-0'"
   >
-    <nav class="mx-auto flex w-[min(94%,76rem)] items-center justify-between py-3 sm:py-4" aria-label="Primary">
+    <nav class="site-header__nav mx-auto flex w-[min(94%,76rem)] items-center justify-between py-3 sm:py-4" aria-label="Primary">
       <NuxtLink to="/" class="text-xs font-ibm-plex-mono uppercase tracking-[0.22em] text-neutral-100 focus-outline sm:text-sm">f00sh</NuxtLink>
 
       <ul class="hidden items-center gap-5 md:flex">
@@ -27,7 +27,7 @@
       </div>
     </nav>
 
-    <div v-if="mobileOpen" class="border-t border-white/10 bg-neutral-950/95 md:hidden">
+    <div v-if="mobileOpen" class="site-header__menu overflow-y-auto border-t border-white/10 bg-neutral-950/95 md:hidden">
       <ul class="mx-auto flex w-[min(94%,76rem)] flex-col py-2">
         <li v-for="item in links" :key="item.to">
           <NuxtLink :to="item.to" class="block py-2 text-[11px] uppercase tracking-[0.18em] text-neutral-300" @click="mobileOpen = false">{{ item.label }}</NuxtLink>

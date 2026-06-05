@@ -1,5 +1,5 @@
 ﻿<template>
-  <section ref="root" class="relative isolate overflow-hidden py-16">
+  <section ref="root" class="page-hero relative isolate overflow-hidden py-16">
     <component :is="scene" v-if="scene" />
     <div v-else class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(163,230,53,0.12),transparent_32%),radial-gradient(circle_at_80%_80%,rgba(56,189,248,0.1),transparent_30%)]" />
     <div class="mx-auto w-[min(94%,76rem)]">
