@@ -292,6 +292,7 @@ defineExpose({ loadHeightmap, regenerate, resetCamera, screenshot });
 <style scoped>
 .topo-canvas { position: fixed; z-index: 0; inset: 0; width: 100vw; height: 100dvh; overflow: hidden; }
 .topo-canvas :deep(canvas) { display: block; width: 100vw !important; max-width: none !important; height: 100dvh !important; }
-.topo-readout { position: fixed; z-index: 10; right: 1rem; bottom: 3.75rem; display: flex; gap: 1rem; color: #9db1a7; font: 500 9px/1 "Montserrat", sans-serif; letter-spacing: .13em; text-transform: uppercase; pointer-events: none; }
+.topo-readout { position: fixed; z-index: 10; right: max(1rem, env(safe-area-inset-right)); bottom: max(3.75rem, env(safe-area-inset-bottom) + 3.25rem); display: flex; gap: clamp(.5rem, 2vw, 1rem); color: #9db1a7; font: 500 clamp(7px, 1.2vmin, 9px)/1 "Montserrat", sans-serif; letter-spacing: .13em; text-transform: uppercase; pointer-events: none; }
 @media (max-width: 640px) { .topo-readout span:first-child { display: none; } }
+@media (orientation: landscape) and (max-height: 640px) { .topo-readout span:first-child { display: none; } }
 </style>

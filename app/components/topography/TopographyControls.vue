@@ -130,30 +130,37 @@ const onUpload = (event: Event) => {
 </script>
 
 <style scoped>
-.topo-panel { position: fixed; z-index: 20; left: 1rem; top: 1rem; width: min(20rem, calc(100vw - 2rem)); color: #d8e5dc; font: 500 10px/1.4 "Montserrat", sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+.topo-panel { --panel-gap: clamp(.45rem, 1.2vmin, .85rem); position: fixed; z-index: 20; left: max(1rem, env(safe-area-inset-left)); top: max(1rem, env(safe-area-inset-top)); width: min(20rem, calc(100vw - max(2rem, env(safe-area-inset-left) + env(safe-area-inset-right)))); color: #d8e5dc; font: 500 clamp(8px, 1.15vmin, 10px)/1.4 "Montserrat", sans-serif; letter-spacing: .12em; text-transform: uppercase; }
 .topo-panel__toggle { display: none; width: 100%; border: 1px solid #b8d9c833; background: #07100dd9; padding: .8rem; text-align: left; color: inherit; backdrop-filter: blur(18px); }
-.topo-panel__body { border: 1px solid #b8d9c833; background: #07100de8; padding: 1rem; backdrop-filter: blur(18px); box-shadow: 0 20px 60px #0008; }
-.topo-panel__header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 1rem; color: #9fb0a8; }
-.topo-panel__header strong { color: #e5fff1; font: 600 1.6rem/1 "Josefin Sans", sans-serif; letter-spacing: .2em; }
-.topo-upload { display: flex; align-items: center; justify-content: space-between; border: 1px dashed #b8d9c844; padding: .75rem; cursor: pointer; }
+.topo-panel__body { max-height: calc(100dvh - max(2rem, env(safe-area-inset-top) + env(safe-area-inset-bottom))); overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; border: 1px solid #b8d9c833; background: #07100de8; padding: clamp(.65rem, 1.8vmin, 1rem); backdrop-filter: blur(18px); box-shadow: 0 20px 60px #0008; }
+.topo-panel__header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: var(--panel-gap); color: #9fb0a8; }
+.topo-panel__header strong { color: #e5fff1; font: 600 clamp(1.25rem, 3.2vmin, 1.6rem)/1 "Josefin Sans", sans-serif; letter-spacing: .2em; }
+.topo-upload { display: flex; align-items: center; justify-content: space-between; border: 1px dashed #b8d9c844; padding: clamp(.55rem, 1.5vmin, .75rem); cursor: pointer; }
 .topo-upload:hover { border-color: #c7ffe0aa; }
 .topo-upload input { display: none; }
 .topo-upload small { color: #819088; font-size: 8px; }
 .topo-status { margin-top: .5rem; color: #b8e9cb; font-size: 8px; line-height: 1.5; overflow-wrap: anywhere; }
-.topo-modes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin: .75rem 0; }
-.topo-modes button, .topo-actions button { border: 1px solid #b8d9c826; padding: .55rem .25rem; color: #91a39a; transition: .2s ease; }
+.topo-modes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin: var(--panel-gap) 0; }
+.topo-modes button, .topo-actions button { border: 1px solid #b8d9c826; padding: clamp(.4rem, 1.2vmin, .55rem) .25rem; color: #91a39a; transition: .2s ease; }
 .topo-modes button:hover, .topo-modes button.active, .topo-actions button:hover { border-color: #c7ffe088; color: #e5fff1; background: #d9ffe60d; }
-.topo-controls { display: grid; gap: .6rem; }
+.topo-controls { display: grid; gap: clamp(.4rem, 1.2vmin, .6rem); }
 .topo-controls label span { display: flex; justify-content: space-between; margin-bottom: .25rem; color: #91a39a; }
 .topo-controls output { color: #d7fce7; }
 .topo-controls input { width: 100%; accent-color: #b8e9cb; }
-.topo-switches { display: grid; grid-template-columns: repeat(3, 1fr); gap: .45rem; margin: .85rem 0; color: #91a39a; }
+.topo-switches { display: grid; grid-template-columns: repeat(3, 1fr); gap: .45rem; margin: var(--panel-gap) 0; color: #91a39a; }
 .topo-switches label { display: flex; gap: .35rem; align-items: center; }
 .topo-switches input { accent-color: #b8e9cb; }
 .topo-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
 @media (max-width: 640px) {
   .topo-panel__toggle { display: block; }
-  .topo-panel__body { max-height: calc(100dvh - 4.5rem); overflow: auto; }
+  .topo-panel__body { max-height: calc(100dvh - max(4.5rem, env(safe-area-inset-top) + env(safe-area-inset-bottom) + 3.5rem)); }
   .topo-panel:not(.topo-panel--open) { width: 9rem; }
+}
+@media (orientation: landscape) and (max-height: 640px) and (max-width: 960px) {
+  .topo-panel { width: min(40rem, calc(100vw - max(5.5rem, env(safe-area-inset-left) + env(safe-area-inset-right) + 4rem))); }
+  .topo-panel__toggle { display: block; }
+  .topo-panel__body { max-height: calc(100dvh - max(4.5rem, env(safe-area-inset-top) + env(safe-area-inset-bottom) + 3.5rem)); }
+  .topo-panel:not(.topo-panel--open) { width: 9rem; }
+  .topo-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(.8rem, 2vw, 1.4rem); }
 }
 </style>

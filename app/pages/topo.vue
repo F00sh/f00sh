@@ -75,12 +75,13 @@ useSeoMeta({
 
 <style scoped>
 .topo-shell { position: fixed; z-index: 100; inset: 0; width: 100vw; height: 100dvh; overflow: hidden; background: #030706; }
-.topo-ui-toggle { position: fixed; z-index: 30; right: 1rem; bottom: 1rem; border: 1px solid #b8d9c833; background: #07100dd9; padding: .65rem .8rem; color: #cfe3d8; font: 500 9px/1 "Montserrat", sans-serif; letter-spacing: .14em; text-transform: uppercase; backdrop-filter: blur(14px); }
+.topo-ui-toggle { position: fixed; z-index: 30; right: max(1rem, env(safe-area-inset-right)); bottom: max(1rem, env(safe-area-inset-bottom)); border: 1px solid #b8d9c833; background: #07100dd9; padding: .65rem .8rem; color: #cfe3d8; font: 500 9px/1 "Montserrat", sans-serif; letter-spacing: .14em; text-transform: uppercase; backdrop-filter: blur(14px); }
 .topo-ui-toggle:hover { border-color: #c7ffe099; color: white; }
-.topo-exit { position: fixed; z-index: 20; right: 1rem; top: 1rem; display: grid; width: 2.75rem; height: 2.75rem; place-items: center; border: 1px solid #b8d9c833; background: #07100dbb; color: #cfe3d8; font-size: 1.5rem; line-height: 1; backdrop-filter: blur(14px); }
+.topo-exit { position: fixed; z-index: 20; right: max(1rem, env(safe-area-inset-right)); top: max(1rem, env(safe-area-inset-top)); display: grid; width: clamp(2.25rem, 7vmin, 2.75rem); height: clamp(2.25rem, 7vmin, 2.75rem); place-items: center; border: 1px solid #b8d9c833; background: #07100dbb; color: #cfe3d8; font-size: 1.5rem; line-height: 1; backdrop-filter: blur(14px); }
 .topo-exit:hover { border-color: #c7ffe099; color: white; }
-.topo-title { position: fixed; z-index: 5; left: 50%; bottom: 1rem; transform: translateX(-50%); width: max-content; text-align: center; color: #d7e9df; pointer-events: none; text-transform: uppercase; }
+.topo-title { position: fixed; z-index: 5; left: 50%; bottom: max(1rem, env(safe-area-inset-bottom)); transform: translateX(-50%); width: max-content; text-align: center; color: #d7e9df; pointer-events: none; text-transform: uppercase; }
 .topo-title span { display: block; margin-bottom: .35rem; color: #82958b; font: 500 8px/1 "Montserrat", sans-serif; letter-spacing: .25em; }
 .topo-title strong { font: 500 clamp(1rem, 2vw, 1.7rem)/.9 "Josefin Sans", sans-serif; letter-spacing: .16em; }
 @media (max-width: 640px) { .topo-title { display: none; } }
+@media (orientation: landscape) and (max-height: 640px) { .topo-title { display: none; } }
 </style>
