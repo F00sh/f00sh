@@ -37,12 +37,12 @@
     <main class="relative z-10">
       <section id="home" class="home-panel home-panel--hero" aria-labelledby="home-title" data-home-section>
         <div class="home-panel__inner">
-          <p class="eyebrow" data-reveal style="--reveal-delay: 80ms">FOOSH / Independent creative studio</p>
+          <p class="eyebrow" data-reveal style="--reveal-delay: 80ms">FOOSH / Independent product &amp; digital designer</p>
           <h1 id="home-title" class="hero-title" data-reveal="title" style="--reveal-delay: 130ms" aria-label="build worlds. move ideas.">
             <span class="title-line" aria-hidden="true"><span>{{ typedHero[0] }}</span><i v-if="typingLine === 0 && !typingComplete" class="typing-cursor" /></span><br>
             <span class="title-line title-line--accent" aria-hidden="true"><span>{{ typedHero[1] }}</span><i v-if="typingLine === 1" class="typing-cursor" /></span>
           </h1>
-          <p class="lead max-w-[39rem]" data-reveal style="--reveal-delay: 260ms">3D, motion, and interactive websites for products, brands, and creative teams.</p>
+          <p class="lead max-w-[39rem]" data-reveal style="--reveal-delay: 260ms">Product design, 3D, animation, UI/UX, web, and game experiences—crafted from concept to delivery.</p>
           <div class="actions" data-reveal style="--reveal-delay: 340ms">
             <NuxtLink to="/work" class="button button--primary focus-outline">View selected work <span aria-hidden="true">↗</span></NuxtLink>
             <a href="mailto:fooshmoola@gmail.com" class="button button--secondary focus-outline">Start a project</a>
@@ -57,7 +57,7 @@
         <div class="home-panel__inner">
           <div class="section-heading" data-reveal>
             <div><p class="eyebrow">01 / Services</p><h2 id="services-title" class="section-title">What I do.</h2></div>
-            <p class="lead">Choose one discipline or combine them into a complete visual system.</p>
+            <p class="lead">Choose one discipline or combine product thinking, visual craft, and digital execution.</p>
           </div>
           <div class="service-grid">
             <NuxtLink v-for="(service, index) in services" :key="service.to" :to="service.to" class="service-item focus-outline" data-reveal :style="{ '--reveal-delay': `${index * 75}ms` }">
@@ -92,8 +92,8 @@
           <div data-reveal>
             <p class="eyebrow">03 / Process</p>
             <h2 id="about-title" class="section-title">From idea<br>to launch.</h2>
-            <p class="lead mt-6 max-w-[36rem]">FOOSH is the independent practice of Marko Vilipić, connecting industrial design thinking with 3D craft and frontend development.</p>
-            <NuxtLink to="/about" class="inline-link mt-7 focus-outline">About the studio ↗</NuxtLink>
+            <p class="lead mt-6 max-w-[36rem]">FOOSH is the independent practice of Marko Vilipić, a Croatia-based product designer with a bachelor’s degree and a multidisciplinary foundation in art and design.</p>
+            <NuxtLink to="/about" class="inline-link mt-7 focus-outline">About the designer ↗</NuxtLink>
           </div>
           <ol class="process-list">
             <li v-for="(step, index) in process" :key="step.title" data-reveal :style="{ '--reveal-delay': `${index * 80}ms` }">
@@ -107,10 +107,10 @@
       <section id="contact" class="home-panel" aria-labelledby="contact-title" data-home-section>
         <div class="home-panel__inner">
           <p class="eyebrow" data-reveal>04 / Contact</p>
-          <h2 id="contact-title" class="section-title max-w-[62rem]" data-reveal style="--reveal-delay: 70ms">Have a project<br>in mind?</h2>
-          <p class="lead mt-6 max-w-[38rem]">Send the goal, timeline, and what already exists. You’ll get a direct reply with a practical next step.</p>
+          <h2 id="contact-title" class="section-title max-w-[62rem]" data-reveal style="--reveal-delay: 70ms">Let’s bring your<br>vision to life.</h2>
+          <p class="lead mt-6 max-w-[38rem]">Share your goal, timeline, and current materials. One-off projects and steady creative collaborations are both welcome.</p>
           <a href="mailto:fooshmoola@gmail.com" class="contact-link focus-outline"><span>fooshmoola@gmail.com</span><span aria-hidden="true">↗</span></a>
-          <div class="contact-meta"><span>Croatia</span><span>Working worldwide</span><span>3D / Motion / Web</span></div>
+          <div class="contact-meta"><span>Croatia</span><span>Working worldwide</span><span>Product / 3D / Motion / Digital</span></div>
         </div>
       </section>
     </main>
@@ -121,12 +121,12 @@
 import { defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue';
 
 const HomeLandscape = defineAsyncComponent(() => import('~/features/home/components/HomeLandscape.client.vue'));
-const capabilities = ['3D modeling', 'Animation', 'Three.js', 'Nuxt development'];
+const capabilities = ['Product & graphic design', '3D & animation', 'UI/UX & web', 'Game design'];
 const services = [
-  { to: '/services/3d-modeling', title: '3D Modeling', text: 'Web-ready products, stylized assets, and visualization systems.' },
-  { to: '/services/3d-animation', title: '3D Animation', text: 'Product stories, campaign loops, and purposeful motion.' },
-  { to: '/services/interactive-3d-websites', title: 'Interactive 3D', text: 'Realtime browser experiences with clear, responsive interaction.' },
-  { to: '/services/web-design', title: 'Web Design', text: 'Focused Nuxt websites with accessible structure and a distinct voice.' },
+  { to: '/services/3d-modeling', title: 'Product & 3D Design', text: 'Product visualization, precise models, and game-ready assets.' },
+  { to: '/services/3d-animation', title: '2D/3D Animation', text: 'Product stories, campaign motion, and expressive visual sequences.' },
+  { to: '/services/interactive-3d-websites', title: 'Game & Interactive Design', text: 'Game assets, mechanics, and responsive realtime experiences.' },
+  { to: '/services/web-design', title: 'Web Design & UI/UX', text: 'Clear, accessible interfaces with a distinctive visual direction.' },
 ];
 const projects = [
   { to: '/topo', title: 'TOPO', type: 'Procedural WebGL' },
@@ -136,7 +136,7 @@ const projects = [
 ];
 const process = [
   { title: 'Define', text: 'Clarify the goal, audience, constraints, and one visual idea worth remembering.' },
-  { title: 'Build', text: 'Design the system, model the assets, and prototype the interaction together.' },
+  { title: 'Build', text: 'Design the system, model the assets, and prototype the experience together.' },
   { title: 'Refine', text: 'Tune performance, responsive behavior, accessibility, and delivery.' },
 ];
 const sectionNav = [

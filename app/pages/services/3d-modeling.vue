@@ -1,14 +1,14 @@
 <template>
   <ServiceDetail
-    eyebrow="Services · 3D Modeling"
-    title="3D models built to look sharp and work hard."
-    intro="Custom product visualization, stylized assets, and optimized models for realtime, marketing, and animation workflows."
+    eyebrow="Services · Product & 3D Design"
+    title="From product idea to precise, production-ready form."
+    intro="Product design thinking, visualization, and 3D modeling for presentations, marketing, animation, realtime experiences, and games."
     :deliverables="deliverables"
     cta="Start a modeling project"
   />
 </template>
 <script setup lang="ts">
 import ServiceDetail from '~/components/ui/ServiceDetail.vue';
-const deliverables = ['Web-ready and realtime-optimized models', 'Product and campaign visualization assets', 'Stylized props, environments, and game-ready geometry'];
-useSeoMeta({ title: '3D Modeling Services — FOOSH', description: '3D modeling for products, websites, games, and visual stories.' });
+const deliverables = ['Product concepts and presentation visuals', 'Web-ready and realtime-optimized 3D models', 'Stylized props, environments, and game-ready geometry'];
+useSeoMeta({ title: 'Product & 3D Design Services — FOOSH', description: 'Product visualization and 3D modeling for presentations, websites, animation, and games.' });
 </script>

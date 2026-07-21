@@ -2,8 +2,8 @@
   <PageHero
     :scene="ContactScene"
     eyebrow="Contact"
-    title="Have a 3D, animation or interactive web project?"
-    intro="Send a short brief with the goal, timeline, and what already exists. You’ll get a direct, practical reply."
+    title="Need a versatile designer or a steady creative partner?"
+    intro="Share your vision, goal, timeline, and current materials. Whether it is a focused project or ongoing collaboration, you’ll get a direct reply and a practical next step."
   >
     <div class="mt-10 grid border-l border-t border-white/15 md:grid-cols-[1.35fr_0.65fr]">
       <a href="mailto:fooshmoola@gmail.com" class="foosh-reveal group flex min-h-32 items-end justify-between gap-4 border-b border-r border-white/15 bg-[#05070a]/60 p-6 text-[#c8ff63] transition-colors hover:bg-[#c8ff63]/10 focus-outline [--reveal-delay:180ms]">
@@ -23,5 +23,5 @@ import { defineAsyncComponent } from 'vue';
 import PageHero from '~/components/ui/PageHero.vue';
 
 const ContactScene = defineAsyncComponent(() => import('~/components/three/ContactScene.client.vue'));
-useSeoMeta({ title: 'Contact — FOOSH', description: 'Contact FOOSH for 3D modeling, animation, and interactive web projects.' });
+useSeoMeta({ title: 'Contact — FOOSH', description: 'Work with FOOSH on product design, 3D, animation, UI/UX, web, or game design projects.' });
 </script>
