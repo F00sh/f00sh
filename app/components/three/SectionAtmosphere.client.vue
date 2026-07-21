@@ -20,6 +20,8 @@ let rig: THREE.Group | null = null;
 let frameId = 0;
 let resizeObserver: ResizeObserver | null = null;
 let lastFrame = 0;
+let lastAnimationAt = 0;
+let animationElapsed = 0;
 let visible = true;
 const geometries = new Set<THREE.BufferGeometry>();
 const materials = new Set<THREE.Material>();
@@ -170,17 +172,23 @@ const animate = (now: number) => {
   if (!renderer || !scene || !camera || !rig || !visible) { frameId = 0; return; }
   frameId = requestAnimationFrame(animate);
   if (now - lastFrame < 1000 / 30) return;
-  const elapsed = now * 0.001;
-  rig.rotation.y = elapsed * props.speed * 0.18;
-  rig.rotation.x = Math.sin(elapsed * 0.16) * 0.04;
-  orbiters.forEach(({ pivot, speed }) => { pivot.rotation.y = elapsed * speed; });
+  const delta = lastAnimationAt ? Math.min((now - lastAnimationAt) / 1000, 0.1) : 0;
+  animationElapsed += delta;
+  rig.rotation.y = animationElapsed * props.speed * 0.18;
+  rig.rotation.x = Math.sin(animationElapsed * 0.16) * 0.04;
+  orbiters.forEach(({ pivot, speed }) => { pivot.rotation.y = animationElapsed * speed; });
   renderer.render(scene, camera);
+  lastAnimationAt = now;
   lastFrame = now;
 };
 
 const onVisibility = () => {
   visible = !document.hidden;
-  if (visible && !frameId) frameId = requestAnimationFrame(animate);
+  if (visible && !frameId) {
+    lastAnimationAt = 0;
+    lastFrame = 0;
+    frameId = requestAnimationFrame(animate);
+  }
   else if (!visible && frameId) { cancelAnimationFrame(frameId); frameId = 0; }
 };
 

@@ -31,6 +31,7 @@ let reducedMotion = false;
 let lowPower = false;
 let lastFrameAt = 0;
 let lastAnimationAt = 0;
+let animationElapsed = 0;
 let pointerX = 0;
 let pointerY = 0;
 let currentPointerX = 0;
@@ -687,14 +688,14 @@ const animate = (now: number) => {
   const delta = Math.min((now - (lastAnimationAt || now)) / 1000, 0.05);
   lastFrameAt = now;
   lastAnimationAt = now;
+  animationElapsed += delta;
   const cameraAlpha = 1 - Math.exp(-1.15 * delta);
   const rotationAlpha = 1 - Math.exp(-0.38 * delta);
   const pointerAlpha = 1 - Math.exp(-1.4 * delta);
   currentPointerX = THREE.MathUtils.lerp(currentPointerX, pointerX, pointerAlpha);
   currentPointerY = THREE.MathUtils.lerp(currentPointerY, pointerY, pointerAlpha);
-  const elapsed = now * 0.001;
-  updateCamera(elapsed, cameraAlpha, rotationAlpha);
-  updateMotion(elapsed, delta);
+  updateCamera(animationElapsed, cameraAlpha, rotationAlpha);
+  updateMotion(animationElapsed, delta);
   renderer.render(scene, camera);
 };
 
