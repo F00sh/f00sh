@@ -1,3 +1,14 @@
-﻿<template><section class="mx-auto w-[min(94%,76rem)] py-16"><h1 class="text-4xl md:text-6xl">Interactive 3D websites and browser-based 3D applications.</h1><p class="mt-6 max-w-3xl text-neutral-300">Three.js and Nuxt experiences for product viewers, WebGL landing pages, and performance-aware 3D interfaces.</p><NuxtLink to="/contact" class="mt-8 inline-block text-xs uppercase tracking-[0.22em] text-lime-300">Build an interactive 3D website</NuxtLink></section></template>
-<script setup lang="ts">useSeoMeta({ title: 'Interactive 3D Websites & Web-Based 3D Applications — FOOSH', description: 'Three.js websites and web-based 3D applications built with Nuxt.' });</script>
-
+<template>
+  <ServiceDetail
+    eyebrow="Services · Game & Interactive Design"
+    title="Interactive worlds built around clear, engaging mechanics."
+    intro="Game assets, mechanics, and Three.js experiences designed to explain, reveal, and engage—without sacrificing clarity or performance."
+    :deliverables="deliverables"
+    cta="Build an interactive world"
+  />
+</template>
+<script setup lang="ts">
+import ServiceDetail from '~/components/ui/ServiceDetail.vue';
+const deliverables = ['Game-ready assets and mechanics concepts', 'Interactive product viewers and configurators', 'Audio, pointer, and scroll-reactive WebGL environments'];
+useSeoMeta({ title: 'Game & Interactive Design Services — FOOSH', description: 'Game assets, mechanics design, interactive Three.js websites, and browser-based 3D applications.' });
+</script>

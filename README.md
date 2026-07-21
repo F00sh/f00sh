@@ -13,7 +13,6 @@ app/
   features/
     home/                 Home-page components and data
     portfolio/            Portfolio components and data
-    story/                Story components, composables, and data
     topography/           Topography components and utilities
     work/                 Interactive work scenes
   layouts/                Nuxt layouts

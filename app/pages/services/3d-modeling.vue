@@ -1,3 +1,14 @@
-﻿<template><section class="mx-auto w-[min(94%,76rem)] py-16"><h1 class="text-4xl md:text-6xl">3D modeling for products, websites, games and visual stories.</h1><p class="mt-6 max-w-3xl text-neutral-300">Custom product visualization, low-poly assets, and web-ready models delivered for real-time and marketing usage.</p><NuxtLink to="/contact" class="mt-8 inline-block text-xs uppercase tracking-[0.22em] text-lime-300">Start a 3D modeling project</NuxtLink></section></template>
-<script setup lang="ts">useSeoMeta({ title: '3D Modeling Services — FOOSH', description: '3D modeling for product visualization, game assets and web-ready 3D objects.' });</script>
-
+<template>
+  <ServiceDetail
+    eyebrow="Services · Product & 3D Design"
+    title="From product idea to precise, production-ready form."
+    intro="Product design thinking, visualization, and 3D modeling for presentations, marketing, animation, realtime experiences, and games."
+    :deliverables="deliverables"
+    cta="Start a modeling project"
+  />
+</template>
+<script setup lang="ts">
+import ServiceDetail from '~/components/ui/ServiceDetail.vue';
+const deliverables = ['Product concepts and presentation visuals', 'Web-ready and realtime-optimized 3D models', 'Stylized props, environments, and game-ready geometry'];
+useSeoMeta({ title: 'Product & 3D Design Services — FOOSH', description: 'Product visualization and 3D modeling for presentations, websites, animation, and games.' });
+</script>

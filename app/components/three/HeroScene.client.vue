@@ -21,6 +21,8 @@ let bushGroup: THREE.Group | null = null;
 let frameId = 0;
 let isVisible = true;
 let t = 0;
+let animationElapsed = 0;
+let lastAnimationAt = 0;
 let stopMotionWatch: (() => void) | null = null;
 let onVisibilityChange: (() => void) | null = null;
 
@@ -215,33 +217,40 @@ const updateGrass = (elapsed: number) => {
   attr.needsUpdate = true;
 };
 
-const animate = () => {
-  if (!renderer || !scene || !camera || !root) return;
-  if (!isVisible) return;
-
-  t += prefersReducedMotion.value ? 0 : 0.0025;
-  const elapsed = performance.now() * 0.001;
+const updateCamera = (phase: number) => {
+  if (!camera) return;
 
   const radius = 22;
-  const camX = Math.sin(t) * radius;
-  const camZ = Math.cos(t) * radius;
-  const camY = terrainHeight(camX, camZ) + 4.2 + Math.sin(t * 2.2) * 0.28;
+  const camX = Math.sin(phase) * radius;
+  const camZ = Math.cos(phase) * radius;
+  const camY = terrainHeight(camX, camZ) + 4.2 + Math.sin(phase * 2.2) * 0.28;
   camera.position.set(camX, camY, camZ);
 
-  const lookT = t + 0.2;
+  const lookT = phase + 0.2;
   const lookX = Math.sin(lookT) * radius;
   const lookZ = Math.cos(lookT) * radius;
   const lookY = terrainHeight(lookX, lookZ) + 2.4;
   camera.lookAt(lookX, lookY, lookZ);
+};
+
+const animate = (now: number) => {
+  if (!renderer || !scene || !camera || !root) return;
+  if (!isVisible) return;
+
+  const delta = lastAnimationAt ? Math.min((now - lastAnimationAt) / 1000, 0.05) : 0;
+  lastAnimationAt = now;
+  animationElapsed += delta;
+  t += prefersReducedMotion.value ? 0 : delta * 0.15;
+  updateCamera(t);
 
   if (treeGroup) {
-    treeGroup.rotation.y += 0.00065;
+    treeGroup.rotation.y += delta * 0.039;
   }
   if (bushGroup) {
-    bushGroup.rotation.y -= 0.00045;
+    bushGroup.rotation.y -= delta * 0.027;
   }
 
-  updateGrass(elapsed);
+  updateGrass(animationElapsed);
   renderer.render(scene, camera);
   frameId = window.requestAnimationFrame(animate);
 };
@@ -255,6 +264,7 @@ const stop = () => {
   if (frameId === 0) return;
   window.cancelAnimationFrame(frameId);
   frameId = 0;
+  lastAnimationAt = 0;
 };
 
 const onResize = () => {
@@ -294,6 +304,9 @@ onMounted(() => {
   scene.add(ambient, key);
 
   onResize();
+  updateCamera(0);
+  updateGrass(0);
+  renderer.render(scene, camera);
   isVisible = !document.hidden;
 
   onVisibilityChange = () => {

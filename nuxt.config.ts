@@ -11,18 +11,9 @@ export default defineNuxtConfig({
     plugins: [tailwindcss()],
   },
 
-  modules: ["@nuxtjs/google-fonts"],
+  modules: [],
 
-  googleFonts: {
-    families: {
-      "Josefin Sans": [400, 500, 600, 700],
-      Montserrat: [400, 500, 600, 700, 800],
-    },
-    display: "swap",
-    subsets: ["latin"],
-    preload: true,
-    preconnect: true,
-    prefetch: true,
-    download: true,
+  app: {
+    pageTransition: { name: "space", mode: "out-in" },
   },
 });

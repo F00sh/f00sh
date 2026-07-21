@@ -1,29 +1,16 @@
-﻿<template>
-  <section ref="root" class="page-hero relative isolate overflow-hidden py-16">
+<template>
+  <section class="page-hero relative isolate min-h-[calc(100svh-3.5rem)] overflow-hidden py-16 sm:min-h-[calc(100svh-4rem)] sm:py-24">
     <component :is="scene" v-if="scene" />
-    <div v-else class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(163,230,53,0.12),transparent_32%),radial-gradient(circle_at_80%_80%,rgba(56,189,248,0.1),transparent_30%)]" />
-    <div class="mx-auto w-[min(94%,76rem)]">
-      <p data-reveal class="text-xs uppercase tracking-[0.22em] text-lime-300">{{ eyebrow }}</p>
-      <h1 data-reveal class="mt-4 text-4xl md:text-6xl">{{ title }}</h1>
-      <p data-reveal class="mt-6 max-w-3xl text-lg text-neutral-300">{{ intro }}</p>
+    <div v-else class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_78%_22%,rgba(24,103,106,0.22),transparent_42%),#05070a]" />
+    <div class="mx-auto w-[min(92%,82rem)]">
+      <p class="foosh-reveal text-[0.61rem] font-medium uppercase tracking-[0.14em] text-[#c8ff63]">{{ eyebrow }}</p>
+      <h1 class="foosh-reveal mt-4 max-w-4xl text-balance text-[clamp(2.25rem,4.4vw,4.1rem)] font-normal leading-[0.96] tracking-[-0.045em] text-[#f2f3ef] [--reveal-delay:70ms]">{{ title }}</h1>
+      <p class="foosh-reveal mt-6 max-w-2xl text-[clamp(0.9rem,1.1vw,1.02rem)] leading-7 text-[#b9bfbc] [--reveal-delay:140ms]">{{ intro }}</p>
       <slot />
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { useGsap } from '~/composables/useGsap';
-import { usePrefersReducedMotion } from '~/composables/usePrefersReducedMotion';
-
 defineProps<{ eyebrow: string; title: string; intro: string; scene?: unknown }>();
-const root = ref<HTMLElement | null>(null);
-const { loadGsap, trackAnimation } = useGsap();
-const { prefersReducedMotion } = usePrefersReducedMotion();
-
-onMounted(async () => {
-  if (!root.value || prefersReducedMotion.value) return;
-  const { gsap } = await loadGsap();
-  trackAnimation(gsap.fromTo(root.value.querySelectorAll('[data-reveal]'), { autoAlpha: 0, y: 22 }, { autoAlpha: 1, y: 0, stagger: 0.1, duration: 0.75, ease: 'power3.out' }));
-});
 </script>

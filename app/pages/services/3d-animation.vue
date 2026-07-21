@@ -1,3 +1,14 @@
-﻿<template><section class="mx-auto w-[min(94%,76rem)] py-16"><h1 class="text-4xl md:text-6xl">3D animation for products, brands and digital stories.</h1><p class="mt-6 max-w-3xl text-neutral-300">Motion design for product reveals, logo animation and campaign visuals, including short-form social formats.</p><NuxtLink to="/contact" class="mt-8 inline-block text-xs uppercase tracking-[0.22em] text-lime-300">Create a 3D animation</NuxtLink></section></template>
-<script setup lang="ts">useSeoMeta({ title: '3D Animation Services — FOOSH', description: '3D animation services for products, brands and visual storytelling.' });</script>
-
+<template>
+  <ServiceDetail
+    eyebrow="Services · 2D/3D Animation"
+    title="Motion that gives the idea a pulse."
+    intro="Purposeful 2D and 3D animation for products, brands, and digital stories—from short campaign loops to expressive reveal sequences."
+    :deliverables="deliverables"
+    cta="Create an animation"
+  />
+</template>
+<script setup lang="ts">
+import ServiceDetail from '~/components/ui/ServiceDetail.vue';
+const deliverables = ['2D/3D product reveals and feature animation', 'Logo, identity, and campaign motion', 'Short-form loops for web and social channels'];
+useSeoMeta({ title: '2D/3D Animation Services — FOOSH', description: '2D and 3D animation for products, brands, campaigns, and visual storytelling.' });
+</script>

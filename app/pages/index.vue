@@ -6,10 +6,10 @@
 import ScrollOnePager from '~/features/home/components/ScrollOnePager.vue';
 
 useSeoMeta({
-  title: 'FOOSH — 3D Modeling, Animation & Interactive Web Design',
-  description: 'FOOSH creates 3D models, 3D animations, interactive Three.js websites, and web-based 3D applications for products, brands, and creative teams.',
-  ogTitle: 'FOOSH — 3D Modeling, Animation & Interactive Web Design',
-  ogDescription: 'Creative services for 3D modeling, animation, interactive web experiences, and modern Nuxt websites by FOOSH.',
+  title: 'FOOSH — Product, 3D, Animation, Game & Web Designer',
+  description: 'Croatia-based product designer offering product and graphic design, 3D modeling, 2D/3D animation, UI/UX, web design, and game asset and mechanics design.',
+  ogTitle: 'FOOSH — Product, 3D, Animation, Game & Web Designer',
+  ogDescription: 'Multidisciplinary design services spanning product design, 3D, animation, UI/UX, web, and game experiences.',
   twitterCard: 'summary_large_image',
 });
 </script>

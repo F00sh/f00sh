@@ -1,5 +1,5 @@
 ﻿<template>
-  <SectionAtmosphere class="absolute inset-0 -z-10" :density="140" :speed="0.3" />
+  <SectionAtmosphere class="absolute inset-0 -z-10" variant="work" :density="140" :speed="0.3" />
 </template>
 <script setup lang="ts">
 import SectionAtmosphere from '~/components/three/SectionAtmosphere.client.vue';

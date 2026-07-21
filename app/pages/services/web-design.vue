@@ -1,3 +1,14 @@
-﻿<template><section class="mx-auto w-[min(94%,76rem)] py-16"><h1 class="text-4xl md:text-6xl">Modern websites with sharp visuals and clean structure.</h1><p class="mt-6 max-w-3xl text-neutral-300">Nuxt development, responsive layouts, and SEO-ready structure with selective motion and 3D enhancements.</p><NuxtLink to="/contact" class="mt-8 inline-block text-xs uppercase tracking-[0.22em] text-lime-300">Design a modern website</NuxtLink></section></template>
-<script setup lang="ts">useSeoMeta({ title: 'Web Design & Nuxt Development — FOOSH', description: 'Modern website design and Nuxt development with motion and responsive structure.' });</script>
-
+<template>
+  <ServiceDetail
+    eyebrow="Services · Web Design & UI/UX"
+    title="Websites with a clear path and a distinct voice."
+    intro="Responsive websites and interfaces that balance expressive art direction with intuitive UI/UX, accessible structure, useful motion, and practical performance."
+    :deliverables="deliverables"
+    cta="Design a better website"
+  />
+</template>
+<script setup lang="ts">
+import ServiceDetail from '~/components/ui/ServiceDetail.vue';
+const deliverables = ['Figma-based UI/UX and responsive interface design', 'HTML, CSS, Nuxt, and reusable UI systems', 'SEO-ready structure, accessibility, and performance polish'];
+useSeoMeta({ title: 'Web Design & UI/UX Services — FOOSH', description: 'Web design and UI/UX with Figma, HTML, CSS, Nuxt, strong visual direction, and clean structure.' });
+</script>
