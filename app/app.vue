@@ -1,5 +1,5 @@
 ﻿<template>
-  <div id="app-root" class="font-montserrat tracking-wide leading-normal text-neutral-50 antialiased">
+  <div id="app-root" class="leading-normal text-neutral-50 antialiased">
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
@@ -15,15 +15,12 @@ body,
 }
 
 html {
-  background: #050706;
+  background: #05070a;
   color-scheme: dark;
 }
 
 #app-root {
   position: relative;
-  background:
-    radial-gradient(circle at 20% 12%, rgba(163, 230, 53, 0.07), transparent 34%),
-    radial-gradient(circle at 85% 85%, rgba(56, 189, 248, 0.06), transparent 31%),
-    #050706;
+  background: #05070a;
 }
 </style>
